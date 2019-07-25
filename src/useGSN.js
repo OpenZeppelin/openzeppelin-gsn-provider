@@ -5,10 +5,10 @@ const GSNProvider = require('./GSNProvider.js');
  * @param {*} web3 instance to modify
  * @param {*} options useGSN, signKey, other RelayClient options
  */
-function onWeb3(web3, options) {
+function onWeb3(web3, options = {}) {
   if (isGSNProvider(web3.currentProvider)) return;
 
-  const gsnProvider = new GSNProvider(web3.currentProvider, options || {});
+  const gsnProvider = new GSNProvider(web3.currentProvider, options);
   web3.setProvider(gsnProvider);
   return web3;
 }
@@ -18,7 +18,7 @@ function onWeb3(web3, options) {
  * @param {*} instance instance to copy. This is not mutated
  * @param {*} options useGSN, signKey, other RelayClient options
  */
-function onTruffleContract(instance, options) {
+function onTruffleContract(instance, options = {}) {
   // truffle-contract instances don't each have their own provider: rather, they go through their parent's (the
   // 'contract abstraction'). We therefore need to create a new contract abstraction, configure it to use the relay
   // provider, and create a new contract instance for that abstraction.
