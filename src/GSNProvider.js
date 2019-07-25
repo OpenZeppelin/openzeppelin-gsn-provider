@@ -3,6 +3,10 @@ const RelayClient = require('./RelayClient');
 
 class GSNProvider {
   constructor(base, options) {
+    if (typeof(base) === 'string') {
+      base = new Web3.providers.HttpProvider(base);
+    }
+
     const web3 = new Web3(base);
     this.baseSend = (base.sendAsync || base.send).bind(base);
     this.relayClient = new RelayClient(web3, options);
