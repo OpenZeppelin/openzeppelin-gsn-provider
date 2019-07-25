@@ -6,7 +6,7 @@ const GSNProvider = require('./GSNProvider.js');
  * @param {*} options useGSN, signKey, other RelayClient options
  */
 function onWeb3(web3, options = {}) {
-  if (isGSNProvider(web3.currentProvider)) return;
+  if (isGSNProvider(web3.currentProvider)) return web3;
 
   const gsnProvider = new GSNProvider(web3.currentProvider, options);
   web3.setProvider(gsnProvider);
