@@ -1,5 +1,5 @@
 const Web3 = require('web3');
-const RelayClient = require('tabookey-gasless').RelayClient;
+const RelayClient = require('./RelayClient');
 
 class GSNProvider {
   constructor(base, options) {
@@ -17,18 +17,18 @@ class GSNProvider {
     }
 
     switch (payload.method) {
-      case 'eth_sendTransaction': 
+      case 'eth_sendTransaction':
         this.relayClient.runRelay(payload, callback);
         return;
-      
-      case 'eth_getTransactionReceipt': 
+
+      case 'eth_getTransactionReceipt':
         this.baseSend(payload, (err, receipt) => {
           if (err) callback(err, null);
           else callback(null, this.relayClient.fixTransactionReceiptResp(receipt));
         });
         return;
-      
-      default: 
+
+      default:
         return this.baseSend(callback);
     }
   }
@@ -46,7 +46,7 @@ class GSNProvider {
     if (typeof(useGSN) !== 'undefined') {
       return useGSN;
     }
-    
+
     return (typeof(this.useGSN) === 'function')
       ? this.useGSN(payload)
       : this.useGSN;
