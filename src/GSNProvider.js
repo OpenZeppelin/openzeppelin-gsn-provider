@@ -13,7 +13,7 @@ class GSNProvider {
 
   send(payload, callback) {
     if (!this.withGSN(payload)) {
-      return this.baseSend(callback);
+      return this.baseSend(payload, callback);
     }
 
     switch (payload.method) {
