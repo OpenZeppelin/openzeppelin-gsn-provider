@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OpenZeppelin/gsn-provider.git"
+    "url": "git+https://github.com/OpenZeppelin/openzeppelin-gsn-provider.git"
   },
   "author": "santiago@openzeppelin.com",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/OpenZeppelin/gsn-provider/issues"
+    "url": "https://github.com/OpenZeppelin/openzeppelin-gsn-provider/issues"
   },
-  "homepage": "https://github.com/OpenZeppelin/gsn-provider#readme",
+  "homepage": "https://github.com/OpenZeppelin/openzeppelin-gsn-provider#readme",
   "dependencies": {
     "abi-decoder": "^2.0.1",
     "axios": "^0.19.0",
