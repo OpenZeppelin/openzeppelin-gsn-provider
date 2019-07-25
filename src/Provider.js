@@ -16,7 +16,7 @@ class GSNProvider {
       return this.baseSend(callback);
     }
 
-    switch (payload.method) {      
+    switch (payload.method) {
       case 'eth_sendTransaction': 
         this.relayClient.runRelay(payload, callback);
         return;
@@ -42,6 +42,11 @@ class GSNProvider {
   }
 
   withGSN(payload) {
+    const useGSN = payload[0].useGSN;
+    if (typeof(useGSN) !== 'undefined') {
+      return useGSN;
+    }
+    
     return (typeof(this.useGSN) === 'function')
       ? this.useGSN(payload)
       : this.useGSN;
