@@ -1,0 +1,22 @@
+{
+  "name": "@openzeppelin/gsn-provider",
+  "version": "0.1.0",
+  "description": "Web3 provider for GSN",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OpenZeppelin/gsn-provider.git"
+  },
+  "author": "santiago@openzeppelin.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/OpenZeppelin/gsn-provider/issues"
+  },
+  "homepage": "https://github.com/OpenZeppelin/gsn-provider#readme",
+  "dependencies": {
+    "tabookey-gasless": "^0.4.0-beta2"
+  }
+}
