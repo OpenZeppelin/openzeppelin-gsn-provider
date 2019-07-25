@@ -29,7 +29,7 @@ class GSNProvider {
         return;
 
       default:
-        return this.baseSend(callback);
+        return this.baseSend(payload, callback);
     }
   }
 
@@ -42,9 +42,11 @@ class GSNProvider {
   }
 
   withGSN(payload) {
-    const useGSN = payload[0].useGSN;
-    if (typeof(useGSN) !== 'undefined') {
-      return useGSN;
+    if (payload.method === 'eth_sendTransaction') {
+      const useGSN = payload.params[0].useGSN;
+      if (typeof(useGSN) !== 'undefined') {
+        return useGSN;
+      }
     }
 
     return (typeof(this.useGSN) === 'function')
