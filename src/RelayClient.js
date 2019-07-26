@@ -446,7 +446,8 @@ class RelayClient {
             to: params.to,
             txfee: params.txFee || params.txfee || relayClientOptions.txfee,
             gas_limit: params.gas && parseInt(params.gas, 16),
-            gas_price: params.gasPrice && parseInt(params.gasPrice, 16)
+            gas_price: params.gasPrice && parseInt(params.gasPrice, 16),
+            approveFunction: params.approveFunction
         };
 
         if (relayClientOptions.verbose)
