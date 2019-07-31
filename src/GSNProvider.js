@@ -9,6 +9,7 @@ class GSNProvider {
 
     const web3 = new Web3(base);
     this.baseSend = (base.sendAsync || base.send).bind(base);
+    this.sendAsync = this.send.bind(this);
     this.relayClient = new RelayClient(web3, options);
     this.useGSN = (options && typeof(options.useGSN) !== "undefined") ? options.useGSN : true;
     if (options.signKey) this.relayClient.useKeypairForSigning(options.signKey);
@@ -35,10 +36,6 @@ class GSNProvider {
       default:
         return this.baseSend(payload, callback);
     }
-  }
-
-  sendAsync(payload, callback) {
-    return this.send(payload, callback);
   }
 
   useKey(key) {
