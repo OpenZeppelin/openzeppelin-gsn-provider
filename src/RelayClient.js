@@ -347,7 +347,7 @@ class RelayClient {
 
             let approvalData = "0x";
             if (typeof options.approveFunction === "function") {
-                approvalData = "0x" + await options.approveFunction({
+                approvalData = await options.approveFunction({
                     from: options.from,
                     to: options.to,
                     encodedFunctionCall: encodedFunctionCall,
