@@ -4,7 +4,7 @@ orbs:
   node: circleci/node@0.0.9
 
 jobs:
-  test:
+  build:
     docker:
     - image: circleci/node:10.13
     working_directory: ~/openzeppelin
