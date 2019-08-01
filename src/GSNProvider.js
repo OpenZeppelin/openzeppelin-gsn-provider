@@ -1,8 +1,8 @@
 const Web3 = require('web3');
-const RelayClient = require('./RelayClient');
+const RelayClient = require('./tabookey-gasless/RelayClient');
 
 class GSNProvider {
-  constructor(base, options) {
+  constructor(base, options = {}) {
     if (typeof(base) === 'string') {
       base = new Web3.providers.HttpProvider(base);
     }

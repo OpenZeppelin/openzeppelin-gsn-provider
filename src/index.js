@@ -1,7 +1,7 @@
-let RelayProvider = require( './RelayProvider')
-let RelayClient = require('./RelayClient')
+const GSNProvider = require('./GSNProvider.js');
+const web3 = require('./web3.js');
 
 module.exports = {
-    RelayProvider,
-    RelayClient
-}
+  GSNProvider,
+  web3
+};
