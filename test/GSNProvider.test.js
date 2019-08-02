@@ -1,9 +1,13 @@
 const Web3 = require('web3');
-const { fundRecipient, relayHubAddress } = require('@openzeppelin/gsn-helpers');
+const { fundRecipient, relayHub } = require('@openzeppelin/gsn-helpers');
 const { GSNProvider } = require('../src');
 const { abi: GreeterAbi, bytecode: GreeterBytecode } = require('./build/contracts/Greeter.json');
 const { generate } = require('ethereumjs-wallet');
-const expect = require('chai').expect;
+const ethUtil = require('ethereumjs-util');
+
+const expect = require('chai')
+  .use(require('chai-as-promised'))
+  .expect;
 
 const PROVIDER_URL = process.env.PROVIDER_URL || 'http://localhost:9545';
 
@@ -21,26 +25,25 @@ const SHAMEFUL_RELAYER_OPTS = {
 // Assertions to polish and move to gsn helpers
 const assertSentViaGSN = async function(web3, txHash, opts = {}) {
   const abiDecoder = require('abi-decoder');
-  const relayHubAbi = require('../src/tabookey-gasless/IRelayHub');
-  abiDecoder.addABI(relayHubAbi);
+  abiDecoder.addABI(relayHub.abi);
 
   const receipt = await web3.eth.getTransactionReceipt(txHash);
-  expect(receipt.to.toLowerCase()).to.eq(relayHubAddress.toLowerCase());
+  expect(receipt.to.toLowerCase()).to.eq(relayHub.address.toLowerCase());
   
   const logs = abiDecoder.decodeLogs(receipt.logs);
   const relayed = logs.find(log => log && log.name === 'TransactionRelayed');
   expect(relayed).to.exist;
 
   const from = relayed.events.find(e => e.name === 'from');
-  if (opts.from) expect(from.value).to.eq(opts.from);
+  if (opts.from) expect(from.value.toLowerCase()).to.eq(opts.from.toLowerCase());
   
   const to = relayed.events.find(e => e.name === 'to');
-  if (opts.to) expect(to.value).to.eq(opts.to);
+  if (opts.to) expect(to.value.toLowerCase()).to.eq(opts.to.toLowerCase());
 }
 
 const assertNotSentViaGSN = async function(web3, txHash) {
   const receipt = await web3.eth.getTransactionReceipt(txHash);
-  expect(receipt.to.toLowerCase()).to.not.eq(relayHubAddress.toLowerCase());
+  expect(receipt.to.toLowerCase()).to.not.eq(relayHub.address.toLowerCase());
 }
 
 // Custom assertions for this suite
@@ -110,7 +113,7 @@ describe('GSNProvider', function () {
       const wallet = generate();
       this.signKey = {
         privateKey: wallet.privKey,
-        address: "0x" + wallet.getAddress().toString('hex')
+        address: ethUtil.toChecksumAddress(ethUtil.bufferToHex(wallet.getAddress()))
       };
 
       this.gsnProvider = new GSNProvider(PROVIDER_URL, {
@@ -120,23 +123,16 @@ describe('GSNProvider', function () {
       this.greeter.setProvider(this.gsnProvider);
     });
 
-    it.skip('sends a tx via GSN with custom sign key if sender not set', async function () {
-      const tx = await this.greeter.methods.greet("Hello").send();
-      assertGreetedEvent(tx);
-      await assertSentViaGSN(this.web3, tx.transactionHash, { from: this.signKey.address });
-    });
-
-    it('sends a tx via GSN with custom sign key with sender explicitly set to sign key', async function () {
+    it('sends a tx via GSN with custom sign key with sender set to sign key', async function () {
       const tx = await this.greeter.methods.greet("Hello").send({ from: this.signKey.address });
       assertGreetedEvent(tx);
       await assertSentViaGSN(this.web3, tx.transactionHash, { from: this.signKey.address });
     });
 
-    it.skip('sends a tx via GSN skipping custom sign key is sender does not match custom signer', async function () {
-      const tx = await this.greeter.methods.greet("Hello").send({ from: this.signer });
-      expect(tx.from).to.eq(this.signer);
-      assertGreetedEvent(tx);
-      await assertSentViaGSN(this.web3, tx.transactionHash, { from: this.signer });
+    it('refuses to send meta tx if sender does not match custom signer', async function () {
+      await expect(
+        this.greeter.methods.greet("Hello").send({ from: this.signer })
+      ).to.be.rejectedWith(/unknown/i);
     });
 
     it('skips GSN if specified in tx opts', async function () {
@@ -145,7 +141,7 @@ describe('GSNProvider', function () {
       await assertNotSentViaGSN(this.web3, tx.transactionHash);
     });
 
-    it.skip('returns signer as account list', async function () {
+    it('returns signer as account list', async function () {
       const web3gsn = new Web3(this.gsnProvider);
       const accounts = await web3gsn.eth.getAccounts();
       expect(accounts).to.deep.eq([this.signKey.address]);

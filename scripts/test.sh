@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Exit script as soon as a command fails.
-set -euo errexit
+set -eo pipefail
 
 # Executes cleanup function at script exit.
 trap cleanup EXIT
