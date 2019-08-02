@@ -1,5 +1,6 @@
 const Web3 = require('web3');
 const RelayClient = require('./tabookey-gasless/RelayClient');
+const PrivateKeyProvider = require('./PrivateKeyProvider');
 
 class GSNProvider {
   constructor(base, options = {}) {
@@ -7,12 +8,15 @@ class GSNProvider {
       base = new Web3.providers.HttpProvider(base);
     }
 
+    if (options.signKey) {
+      base = new PrivateKeyProvider(base, options.signKey);
+    }
+
     const web3 = new Web3(base);
     this.baseSend = (base.sendAsync || base.send).bind(base);
     this.sendAsync = this.send.bind(this);
     this.relayClient = new RelayClient(web3, options);
     this.useGSN = (options && typeof(options.useGSN) !== "undefined") ? options.useGSN : true;
-    if (options.signKey) this.relayClient.useKeypairForSigning(options.signKey);
     this.isGSNProvider = true;
   }
 
@@ -23,6 +27,9 @@ class GSNProvider {
 
     switch (payload.method) {
       case 'eth_sendTransaction':
+        // Use sign key address if set  
+        const txParams = payload.params[0];
+        if (!txParams.from && this.base.address) txParams.from = this.base.address;
         this.relayClient.runRelay(payload, callback);
         return;
 
@@ -36,10 +43,6 @@ class GSNProvider {
       default:
         return this.baseSend(payload, callback);
     }
-  }
-
-  useKey(key) {
-    this.relayClient.useKeypairForSigning(key);
   }
 
   withGSN(payload) {
