@@ -152,7 +152,7 @@ describe('GSNProvider', function () {
     });
   });
 
-  context('subscriptions', function () {
+  context('on subscriptions', function () {
     async function testSubscription(provider) {
       this.greeter.setProvider(provider);
 
@@ -177,7 +177,7 @@ describe('GSNProvider', function () {
     });
   });
 
-  context('reverts on gsn errors', function () {
+  context('on gsn errors', function () {
     beforeEach(function () {
       const gsnProvider = new GSNProvider(PROVIDER_URL, { ...SHAMEFUL_RELAYER_OPTS });
       this.greeter.setProvider(gsnProvider);
@@ -208,7 +208,7 @@ describe('GSNProvider', function () {
     });
   });
 
-  context('reverts with GSN disabled by default', function () {
+  context('on gsn errors with gsn disabled by default', function () {
     beforeEach(function () {
       const gsnProvider = new GSNProvider(PROVIDER_URL, { ...SHAMEFUL_RELAYER_OPTS, useGSN: false });
       this.greeter.setProvider(gsnProvider);
@@ -224,6 +224,46 @@ describe('GSNProvider', function () {
       await expect (
         this.greeter.methods.reverts().send({ from: this.signer, useGSN: true })
       ).to.be.rejectedWith(/Transaction has been reverted/);
+    });
+  });
+
+  context('on illegal gsn actions', function () {
+    beforeEach(function () {
+      const gsnProvider = new GSNProvider(PROVIDER_URL, { ...SHAMEFUL_RELAYER_OPTS });
+      this.greeter.setProvider(gsnProvider);
+      this.web3gsn = new Web3(gsnProvider);
+    });
+
+    it('throws if attempting to create a contract', async function () {
+      const Greeter = new this.web3gsn.eth.Contract(GreeterAbi, null, { data: GreeterBytecode});
+      await expect (
+        Greeter.deploy().send({ from: this.deployer, gas: 1e6 })
+      ).to.be.rejectedWith(/cannot deploy/i);
+    });
+
+    it('creates a contract if disables gsn', async function () {
+      const Greeter = new this.web3gsn.eth.Contract(GreeterAbi, null, { data: GreeterBytecode});
+      await expect (
+        Greeter.deploy().send({ from: this.deployer, gas: 1e6, useGSN: false })
+      ).to.be.fulfilled;
+    });
+
+    it('throws if attempting to send value', async function () {
+      await expect (
+        this.greeter.methods.greet("Money").send({ from: this.signer, value: 1e14 })
+      ).to.be.rejectedWith(/cannot send funds/i);
+    });
+
+    it('sends tx if value is zero', async function () {
+      await expect (
+        this.greeter.methods.greet("Money").send({ from: this.signer, value: 0 })
+      ).to.be.fulfilled;
+    });
+
+    it('sends value if disables gsn', async function () {
+      await expect (
+        this.greeter.methods.greet("Money").send({ from: this.signer, value: 1e14, useGSN: false })
+      ).to.be.fulfilled;
     });
   });
 });

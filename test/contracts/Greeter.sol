@@ -14,7 +14,7 @@ contract Greeter is IRelayRecipient, GSNContext {
     revert("GreetingError");
   }
 
-  function greet(string memory message) public {
+  function greet(string memory message) public payable {
     emit Greeted(_msgSender(), message);
   }
 

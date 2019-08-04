@@ -30,6 +30,17 @@ class GSNProvider {
         // Use sign key address if set
         if (!txParams.from && this.base.address) txParams.from = this.base.address;
         
+        // TODO: move validations to the relay client
+        if (!txParams.to) {
+          return callback(new Error("Cannot deploy a new contract via the GSN"), null);
+        }
+        if (txParams.value) {
+          const strValue = txParams.value.toString();
+          if (strValue !== '0' && strValue !== '0x0') {
+            return callback(new Error("Cannot send funds via the GSN"), null);
+          }
+        }
+
         // Delegate to relay client
         this.relayClient.runRelay(payload, (err, response) => {
           if (err) {
@@ -39,6 +50,7 @@ class GSNProvider {
             callback(null, response);
           }
         });
+
         return;
 
       case 'eth_getTransactionReceipt':
@@ -51,6 +63,7 @@ class GSNProvider {
           if (err) callback(err, null);
           else callback(null, this.relayClient.fixTransactionReceiptResp(receipt));
         });
+
         return;
     }
 
