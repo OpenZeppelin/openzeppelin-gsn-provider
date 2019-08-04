@@ -4,7 +4,7 @@ pragma solidity ^0.5.0;
  * @dev Enables GSN support by recognizing calls from RelayHub and extracting
  * the actual sender and call data from the received values.
  *
- * Copied from @openzeppelin/contracts
+ * Adapted from @openzeppelin/contracts
  */
 contract GSNContext {
     address private _relayHub = 0x537F27a04470242ff6b2c3ad247A05248d0d27CE;
@@ -12,6 +12,10 @@ contract GSNContext {
     // Currently required by the RelayProvider
     function getHubAddr() public view returns (address) {
         return _relayHub;
+    }
+
+    function _upgradeRelayHub(address newRelayHub) internal {
+        _relayHub = newRelayHub;
     }
 
     // Overrides for Context's functions: when called from RelayHub, sender and

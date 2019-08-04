@@ -2,6 +2,7 @@ const Web3 = require('web3');
 const { fundRecipient, relayHub } = require('@openzeppelin/gsn-helpers');
 const { GSNProvider } = require('../src');
 const { abi: GreeterAbi, bytecode: GreeterBytecode } = require('./build/contracts/Greeter.json');
+const { abi: VanillaGreeterAbi, bytecode: VanillaGreeterBytecode } = require('./build/contracts/VanillaGreeter.json');
 const { generate } = require('ethereumjs-wallet');
 const ethUtil = require('ethereumjs-util');
 
@@ -10,6 +11,7 @@ const expect = require('chai')
   .expect;
 
 const PROVIDER_URL = process.env.PROVIDER_URL || 'http://localhost:9545';
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 // Options we have been carrying over to get the relay client to work
 // We need to look into them, document them, and properly configure them here
@@ -264,6 +266,76 @@ describe('GSNProvider', function () {
       await expect (
         this.greeter.methods.greet("Money").send({ from: this.signer, value: 1e14, useGSN: false })
       ).to.be.fulfilled;
+    });
+  });
+
+  context('on invalid hub', async function () {
+    beforeEach(function () {
+      this.gsnProvider = new GSNProvider(PROVIDER_URL, { ...SHAMEFUL_RELAYER_OPTS });
+    });
+
+    it('throws if hub is the zero address', async function () {
+      await this.greeter.methods.setHub(ZERO_ADDRESS).send({ from: this.sender });
+      this.greeter.setProvider(this.gsnProvider);
+      
+      await expect (
+        this.greeter.methods.greet("Hello").send({ from: this.signer })
+      ).to.be.rejectedWith(/zero/);
+    });
+
+    it('throws if hub is not a contract', async function () {
+      await this.greeter.methods.setHub(this.sender).send({ from: this.sender });
+      this.greeter.setProvider(this.gsnProvider);
+      
+      await expect (
+        this.greeter.methods.greet("Hello").send({ from: this.signer })
+      ).to.be.rejectedWith(/could not query relay hub/i);
+    });
+
+    it('throws if hub is not a hub', async function () {
+      await this.greeter.methods.setHub(this.greeter.options.address).send({ from: this.sender });
+      this.greeter.setProvider(this.gsnProvider);
+      
+      await expect (
+        this.greeter.methods.greet("Hello").send({ from: this.signer })
+      ).to.be.rejectedWith(/could not query relay hub/i);
+    });
+  });
+
+  context('on invalid recipient', async function () {
+    beforeEach(function () {
+      this.gsnProvider = new GSNProvider(PROVIDER_URL, { ...SHAMEFUL_RELAYER_OPTS });
+    });
+
+    it('throws if recipient does not respond hub addr', async function () {
+      const VanillaGreeter = new this.web3.eth.Contract(VanillaGreeterAbi, null, { data: VanillaGreeterBytecode});
+      const greeter = await VanillaGreeter.deploy().send({ from: this.deployer, gas: 1e6 });
+      greeter.setProvider(this.gsnProvider);
+
+      await expect (
+        greeter.methods.greet("Hello").send({ from: this.signer })
+      ).to.be.rejectedWith(/could not get relay hub address/i);
+    });
+
+    it.skip('throws if recipient is not funded', async function () {
+      const Greeter = new this.web3.eth.Contract(GreeterAbi, null, { data: GreeterBytecode});
+      const greeter = await Greeter.deploy().send({ from: this.deployer, gas: 1e6 });
+      greeter.setProvider(this.gsnProvider);
+
+      await expect (
+        greeter.methods.greet("Hello").send({ from: this.signer })
+      ).to.be.rejectedWith(/is not funded/i);
+    });
+
+    it.skip('throws if recipient has not enough funds', async function () {
+      const Greeter = new this.web3.eth.Contract(GreeterAbi, null, { data: GreeterBytecode});
+      const greeter = await Greeter.deploy().send({ from: this.deployer, gas: 1e6 });
+      await fundRecipient(web3, { amount: 1e8 });
+      greeter.setProvider(this.gsnProvider);
+
+      await expect (
+        greeter.methods.greet("Hello").send({ from: this.signer })
+      ).to.be.rejectedWith(/has not enough funds/i);
     });
   });
 });
