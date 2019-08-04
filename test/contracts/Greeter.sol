@@ -4,10 +4,10 @@ import "./IRelayRecipient.sol";
 import "./GSNContext.sol";
 
 contract Greeter is IRelayRecipient, GSNContext {
-  event Greeted(string message, address greeter);
+  event Greeted(address indexed greeter, string message);
 
   function greet(string memory message) public {
-    emit Greeted(message, _msgSender());
+    emit Greeted(_msgSender(), message);
   }
 
   function acceptRelayedCall(

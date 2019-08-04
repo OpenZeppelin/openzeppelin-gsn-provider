@@ -4,16 +4,14 @@ const PrivateKeyProvider = require('./PrivateKeyProvider');
 
 class GSNProvider {
   constructor(base, options = {}) {
-    if (typeof(base) === 'string') {
-      base = new Web3.providers.HttpProvider(base);
-    }
-
-    if (options.signKey) {
-      base = new PrivateKeyProvider(base, options.signKey);
-    }
-
     const web3 = new Web3(base);
+    this._delegateToProvider(web3.currentProvider);
+    this._wrapWithPrivateKey(web3, options);
+    
+    base = web3.currentProvider;
+    this.baseProvider = base;
     this.baseSend = (base.sendAsync || base.send).bind(base);
+    
     this.sendAsync = this.send.bind(this);
     this.relayClient = new RelayClient(web3, options);
     this.useGSN = (options && typeof(options.useGSN) !== "undefined") ? options.useGSN : true;
@@ -56,6 +54,30 @@ class GSNProvider {
     return (typeof(this.useGSN) === 'function')
       ? this.useGSN(payload)
       : this.useGSN;
+  }
+
+  _delegateToProvider(provider) {
+    const delegate = fn => {
+      if (provider[fn]) this[fn] = provider[fn].bind(provider);
+    }
+    
+    // If the subprovider is a ws or ipc provider, then register all its methods on this provider
+    // and delegate calls to the subprovider. This allows subscriptions to work.
+    delegate('on');
+    delegate('removeListener');
+    delegate('removeAllListeners');
+    delegate('reset');
+    delegate('disconnect');
+    delegate('addDefaultEvents');
+    delegate('once');
+    delegate('reconnect');
+  }
+
+  _wrapWithPrivateKey(web3, options) {
+    if (options.signKey) {
+      const provider = new PrivateKeyProvider(web3.currentProvider, options.signKey);
+      web3.setProvider(provider);
+    }
   }
 }
 

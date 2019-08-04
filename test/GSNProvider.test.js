@@ -146,5 +146,30 @@ describe('GSNProvider', function () {
       const accounts = await web3gsn.eth.getAccounts();
       expect(accounts).to.deep.eq([this.signKey.address]);
     });
-  })
+  });
+
+  context('subscriptions', function () {
+    async function testSubscription(provider) {
+      this.greeter.setProvider(provider);
+
+      let event = null;
+      this.greeter.events.Greeted()
+        .on('data', data => { event = data });
+      await this.greeter.methods.greet("Hello").send({ from: this.sender, useGSN: false });
+      await provider.disconnect();
+
+      expect(event).to.exist;
+      expect(event.returnValues.message).to.eq("Hello");
+    }
+
+    it('subscribes to events with ws provider', async function () {
+      const provider = (new Web3(PROVIDER_URL.replace(/^http/, 'ws'))).currentProvider;
+      await testSubscription.call(this, provider);
+    });
+
+    it('subscribes to events with gsn ws provider', async function () {
+      const gsnProvider = new GSNProvider(PROVIDER_URL.replace(/^http/, 'ws'), SHAMEFUL_RELAYER_OPTS);
+      await testSubscription.call(this, gsnProvider);
+    });
+  });
 });
