@@ -17,36 +17,50 @@ class GSNProvider {
     this.useGSN = (options && typeof(options.useGSN) !== "undefined") ? options.useGSN : true;
     this.isGSNProvider = true;
     this.options = options;
+    this.relayedTxs = new Set();
   }
 
   send(payload, callback) {
-    if (!this.withGSN(payload)) {
-      return this.baseSend(payload, callback);
-    }
-
     switch (payload.method) {
-      case 'eth_sendTransaction':
-        // Use sign key address if set
+      case 'eth_sendTransaction':        
+        // Check for GSN usage
         const txParams = payload.params[0];
+        if (!this._withGSN(payload, txParams)) break;
+        
+        // Use sign key address if set
         if (!txParams.from && this.base.address) txParams.from = this.base.address;
-        this.relayClient.runRelay(payload, callback);
+        
+        // Delegate to relay client
+        this.relayClient.runRelay(payload, (err, response) => {
+          if (err) {
+            callback(err, null);
+          } else {
+            this.relayedTxs.add(response.result);
+            callback(null, response);
+          }
+        });
         return;
 
       case 'eth_getTransactionReceipt':
+        // Check for GSN usage
+        const txHash = payload.params[0];
+        if (!this._withGSN(payload) && !this.relayedTxs.has(txHash)) break;
+
+        // Set error status if tx was rejected
         this.baseSend(payload, (err, receipt) => {
           if (err) callback(err, null);
           else callback(null, this.relayClient.fixTransactionReceiptResp(receipt));
         });
         return;
-
-      default:
-        return this.baseSend(payload, callback);
     }
+
+    // Default by sending to base provider
+    return this.baseSend(payload, callback);
   }
 
-  withGSN(payload) {
-    if (payload.method === 'eth_sendTransaction') {
-      const useGSN = payload.params[0].useGSN;
+  _withGSN(payload, options) {
+    if (options) {
+      const useGSN = options.useGSN;
       if (typeof(useGSN) !== 'undefined') {
         return useGSN;
       }

@@ -177,7 +177,7 @@ describe('GSNProvider', function () {
     });
   });
 
-  context('reverts', function () {
+  context('reverts on gsn errors', function () {
     beforeEach(function () {
       const gsnProvider = new GSNProvider(PROVIDER_URL, { ...SHAMEFUL_RELAYER_OPTS });
       this.greeter.setProvider(gsnProvider);
@@ -198,6 +198,31 @@ describe('GSNProvider', function () {
     it('throws if contract post reverts', async function () {
       await expect (
         this.greeter.methods.greet("Hello").send({ from: this.failsPost })
+      ).to.be.rejectedWith(/Transaction has been reverted/);
+    });
+
+    it('throws if contract execution reverts without using GSN', async function () {
+      await expect (
+        this.greeter.methods.reverts().send({ from: this.signer, useGSN: false })
+      ).to.be.rejectedWith(/Transaction has been reverted/);
+    });
+  });
+
+  context('reverts with GSN disabled by default', function () {
+    beforeEach(function () {
+      const gsnProvider = new GSNProvider(PROVIDER_URL, { ...SHAMEFUL_RELAYER_OPTS, useGSN: false });
+      this.greeter.setProvider(gsnProvider);
+    });
+
+    it('throws if contract execution reverts', async function () {
+      await expect (
+        this.greeter.methods.reverts().send({ from: this.signer })
+      ).to.be.rejectedWith(/Transaction has been reverted/);
+    });
+
+    it('throws if contract execution reverts explicitly using GSN', async function () {
+      await expect (
+        this.greeter.methods.reverts().send({ from: this.signer, useGSN: true })
       ).to.be.rejectedWith(/Transaction has been reverted/);
     });
   });
