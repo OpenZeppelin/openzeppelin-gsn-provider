@@ -11,6 +11,7 @@ const ethUtils = require('ethereumjs-util');
 const ethWallet = require('ethereumjs-wallet');
 const ethJsTx = require('ethereumjs-tx');
 const abi_decoder = require('abi-decoder');
+const BN = require('bignumber.js');
 
 const relayHubAbi = require('./IRelayHub');
 const relayRecipientAbi = require('./IRelayRecipient');
@@ -303,6 +304,9 @@ class RelayClient {
         //TODO: should add gas estimation for encodedFunctionCall (tricky, since its not a real transaction)
         let gasLimit = this.config.force_gasLimit || options.gas_limit;
 
+        // Check that the recipient has enough balance in the hub, assuming a relaying fee of zero
+        await this.validateRecipientBalance(relayHub, options.to, gasLimit, gasPrice, 0);
+        
         let blockNow = await this.web3.eth.getBlockNumber();
         let blockFrom = Math.max(1, blockNow - relay_lookup_limit_blocks);
         let pinger = await this.serverHelper.newActiveRelayPinger(blockFrom, gasPrice);
@@ -530,6 +534,18 @@ class RelayClient {
         }
 
         return relayHub;
+    }
+
+    async validateRecipientBalance(relayHub, recipient, gasLimit, gasPrice, relayFee) {
+        const balance = await relayHub.methods.balanceOf(recipient).call();
+        if (BN(balance).isZero()) {
+            throw new Error(`Recipient ${recipient} has no funds for paying for relayed calls on the relay hub.`)
+        }
+
+        const maxCharge = await relayHub.methods.maxPossibleCharge(gasLimit, gasPrice, relayFee).call();
+        if (BN(maxCharge).isGreaterThan(BN(balance))) {
+            throw new Error(`Recipient ${recipient} has not enough funds for paying for this relayed call (has ${balance}, requires ${maxCharge}).`);
+        }
     }
 }
 

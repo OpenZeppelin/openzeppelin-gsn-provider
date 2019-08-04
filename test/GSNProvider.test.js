@@ -317,20 +317,21 @@ describe('GSNProvider', function () {
       ).to.be.rejectedWith(/could not get relay hub address/i);
     });
 
-    it.skip('throws if recipient is not funded', async function () {
+    it('throws if recipient is not funded', async function () {
       const Greeter = new this.web3.eth.Contract(GreeterAbi, null, { data: GreeterBytecode});
       const greeter = await Greeter.deploy().send({ from: this.deployer, gas: 1e6 });
       greeter.setProvider(this.gsnProvider);
 
       await expect (
         greeter.methods.greet("Hello").send({ from: this.signer })
-      ).to.be.rejectedWith(/is not funded/i);
+      ).to.be.rejectedWith(/has no funds/i);
     });
 
-    it.skip('throws if recipient has not enough funds', async function () {
+    it('throws if recipient has not enough funds', async function () {
       const Greeter = new this.web3.eth.Contract(GreeterAbi, null, { data: GreeterBytecode});
       const greeter = await Greeter.deploy().send({ from: this.deployer, gas: 1e6 });
-      await fundRecipient(web3, { amount: 1e8 });
+      // TODO: fundRecipient should accept strings or numbers
+      await fundRecipient(this.web3, { amount: new Web3.utils.BN(1e8), recipient: greeter.options.address });
       greeter.setProvider(this.gsnProvider);
 
       await expect (
