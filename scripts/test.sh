@@ -33,7 +33,7 @@ relayer_running() {
 }
 
 start_ganache() {
-  npx ganache-cli --port "$ganache_port" -d &> /dev/null &
+  npx ganache-cli --port "$ganache_port" -d --noVMErrorsOnRPCResponse &> /dev/null &
   ganache_pid=$!
 
   echo "Waiting for ganache to launch on port "$ganache_port"..."

@@ -420,7 +420,7 @@ class RelayClient {
             let transactionRelayed = logs.find(e => e && e.name == 'TransactionRelayed');
 
             const setErrorStatus = (reason) => {
-                console.log(`${reason}. changing status to zero`)
+                if (this.config.verbose) console.log(`${reason}. changing status to zero`)
                 resp.result.status = 0
             }
 

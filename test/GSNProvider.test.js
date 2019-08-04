@@ -56,9 +56,13 @@ describe('GSNProvider', function () {
   before('setting up web3', async function () {
     this.web3 = new Web3(PROVIDER_URL, { gasPrice: 1e9 });
     this.accounts = await this.web3.eth.getAccounts();
+    expect(this.accounts).to.have.lengthOf(10);
+
     this.deployer = this.accounts[0];
     this.sender = this.accounts[1];
     this.signer = this.accounts[2];
+    this.failsPre = this.accounts[7];
+    this.failsPost = this.accounts[8];
   });
 
   beforeEach('setting up sample contract', async function () {
@@ -170,6 +174,31 @@ describe('GSNProvider', function () {
     it('subscribes to events with gsn ws provider', async function () {
       const gsnProvider = new GSNProvider(PROVIDER_URL.replace(/^http/, 'ws'), SHAMEFUL_RELAYER_OPTS);
       await testSubscription.call(this, gsnProvider);
+    });
+  });
+
+  context('reverts', function () {
+    beforeEach(function () {
+      const gsnProvider = new GSNProvider(PROVIDER_URL, { ...SHAMEFUL_RELAYER_OPTS });
+      this.greeter.setProvider(gsnProvider);
+    });
+
+    it('throws if contract execution reverts', async function () {
+      await expect (
+        this.greeter.methods.reverts().send({ from: this.signer })
+      ).to.be.rejectedWith(/Transaction has been reverted/);
+    });
+
+    it('throws if contract pre reverts', async function () {
+      await expect (
+        this.greeter.methods.greet("Hello").send({ from: this.failsPre })
+      ).to.be.rejectedWith(/Transaction has been reverted/);
+    });
+
+    it('throws if contract post reverts', async function () {
+      await expect (
+        this.greeter.methods.greet("Hello").send({ from: this.failsPost })
+      ).to.be.rejectedWith(/Transaction has been reverted/);
     });
   });
 });

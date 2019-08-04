@@ -16,6 +16,7 @@ class GSNProvider {
     this.relayClient = new RelayClient(web3, options);
     this.useGSN = (options && typeof(options.useGSN) !== "undefined") ? options.useGSN : true;
     this.isGSNProvider = true;
+    this.options = options;
   }
 
   send(payload, callback) {
@@ -25,7 +26,7 @@ class GSNProvider {
 
     switch (payload.method) {
       case 'eth_sendTransaction':
-        // Use sign key address if set  
+        // Use sign key address if set
         const txParams = payload.params[0];
         if (!txParams.from && this.base.address) txParams.from = this.base.address;
         this.relayClient.runRelay(payload, callback);
