@@ -54,6 +54,15 @@ const assertGreetedEvent = function(txReceipt, value='Hello') {
   expect(txReceipt.events.Greeted.returnValues.message).to.eq(value);
 }
 
+// Helpers
+function createSignKey() {
+  const wallet = generate();
+  return {
+    privateKey: wallet.privKey,
+    address: ethUtil.toChecksumAddress(ethUtil.bufferToHex(wallet.getAddress()))
+  };
+}
+
 describe('GSNProvider', function () {
   before('setting up web3', async function () {
     this.web3 = new Web3(PROVIDER_URL, { gasPrice: 1e9 });
@@ -116,12 +125,7 @@ describe('GSNProvider', function () {
 
   context('with custom sign key', function () {
     beforeEach(function () {
-      const wallet = generate();
-      this.signKey = {
-        privateKey: wallet.privKey,
-        address: ethUtil.toChecksumAddress(ethUtil.bufferToHex(wallet.getAddress()))
-      };
-
+      this.signKey = createSignKey();
       this.gsnProvider = new GSNProvider(PROVIDER_URL, {
         ... SHAMEFUL_RELAYER_OPTS, 
         signKey: this.signKey
@@ -160,7 +164,7 @@ describe('GSNProvider', function () {
 
       let event = null;
       this.greeter.events.Greeted()
-        .on('data', data => { event = data });
+        .on('data', data => { event = data; });
       await this.greeter.methods.greet("Hello").send({ from: this.sender, useGSN: false });
       await provider.disconnect();
 
@@ -175,6 +179,14 @@ describe('GSNProvider', function () {
 
     it('subscribes to events with gsn ws provider', async function () {
       const gsnProvider = new GSNProvider(PROVIDER_URL.replace(/^http/, 'ws'), SHAMEFUL_RELAYER_OPTS);
+      await testSubscription.call(this, gsnProvider);
+    });
+
+    it('subscribes to events with gsn ws provider with sign key', async function () {
+      const gsnProvider = new GSNProvider(PROVIDER_URL.replace(/^http/, 'ws'), {
+        ... SHAMEFUL_RELAYER_OPTS,
+        signKey: createSignKey()
+      });
       await testSubscription.call(this, gsnProvider);
     });
   });
