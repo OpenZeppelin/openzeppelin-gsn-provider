@@ -46,11 +46,11 @@ start_ganache() {
 }
 
 setup_gsn_relay() {
-  node ./node_modules/@openzeppelin/gsn-helpers/oz-gsn.js deploy-relay-hub --ethereumNodeURL $ganache_url # Replace this with npx once the package is out
+  relay_hub_addr=$(node ./node_modules/@openzeppelin/gsn-helpers/oz-gsn.js deploy-relay-hub --ethereumNodeURL $ganache_url) # Replace this with npx once the package is out
 
-  echo "Launching GSN relay server"
+  echo "Launching GSN relay server to hub $relay_hub_addr"
 
-  ./bin/gsn-relay -DevMode -RelayHubAddress "0x537F27a04470242ff6b2c3ad247A05248d0d27CE" -GasPricePercent -99 -EthereumNodeUrl $ganache_url -Url $relayer_url &> /dev/null &
+  ./bin/gsn-relay -DevMode -RelayHubAddress $relay_hub_addr -GasPricePercent -99 -EthereumNodeUrl $ganache_url -Url $relayer_url &> /dev/null &
   gsn_relay_server_pid=$!
 
   while ! relayer_running; do

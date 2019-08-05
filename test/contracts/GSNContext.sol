@@ -7,7 +7,7 @@ pragma solidity ^0.5.0;
  * Adapted from @openzeppelin/contracts
  */
 contract GSNContext {
-    address private _relayHub = 0x537F27a04470242ff6b2c3ad247A05248d0d27CE;
+    address private _relayHub = 0xD216153c06E857cD7f72665E0aF1d7D82172F494;
 
     // Currently required by the RelayProvider
     function getHubAddr() public view returns (address) {
