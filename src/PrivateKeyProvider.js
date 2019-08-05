@@ -13,6 +13,7 @@ class PrivateKeyProvider {
     // Patch base provider if needed
     this.baseSend = (base.sendAsync || base.send).bind(base);
     this.sendAsync = this.send.bind(this);
+    this.baseProvider = base;
 
     this.messageId = 0;
   }
