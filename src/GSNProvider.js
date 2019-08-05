@@ -21,10 +21,12 @@ class GSNProvider {
   }
 
   send(payload, callback) {
+    let txParams;
+
     switch (payload.method) {
       case 'eth_sendTransaction':        
         // Check for GSN usage
-        const txParams = payload.params[0];
+        txParams = payload.params[0];
         if (!this._withGSN(payload, txParams)) break;
         
         // Use sign key address if set
@@ -53,6 +55,9 @@ class GSNProvider {
 
         return;
 
+      case 'eth_estimateGas':
+        if (this._handleEstimateGas(payload, callback)) return;
+        
       case 'eth_getTransactionReceipt':
         // Check for GSN usage
         const txHash = payload.params[0];
@@ -69,6 +74,25 @@ class GSNProvider {
 
     // Default by sending to base provider
     return this.baseSend(payload, callback);
+  }
+
+  _handleEstimateGas(payload, callback) {
+    const txParams = payload.params[0];
+    if (!this._withGSN(payload, txParams)) return false;
+
+    this.relayClient.createRelayHubFromRecipient(txParams.to)
+      .then(hub => {
+        const payloadFromHub = { 
+          ... payload,
+          params: [ { ... txParams, from: hub.options.address } ]
+        };
+        this.baseSend(payloadFromHub, callback);
+      })
+      .catch(err => {
+        callback(err, null);
+      });
+    
+    return true;
   }
 
   _withGSN(payload, options) {

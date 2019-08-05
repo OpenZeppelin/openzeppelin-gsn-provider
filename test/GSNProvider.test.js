@@ -339,4 +339,30 @@ describe('GSNProvider', function () {
       ).to.be.rejectedWith(/has not enough funds/i);
     });
   });
+
+  context('on gas estimations', function () {
+    beforeEach(function () {
+      // Remove gas limit hardcoded options
+      const opts = { ... SHAMEFUL_RELAYER_OPTS };
+      delete opts.force_gasLimit;
+      delete opts.gasLimit;
+      const gsnProvider = new GSNProvider(PROVIDER_URL, opts);
+      this.greeter.setProvider(gsnProvider);
+    });
+
+    it('sends a tx via GSN with estimated gas', async function () {
+      const tx = this.greeter.methods.greet("Hello world testing a long message in the greeting!");
+      const gas = await tx.estimateGas();
+      const receipt = await tx.send({ from: this.signer, gas });
+      assertGreetedEvent(receipt, "Hello world testing a long message in the greeting!");
+      await assertSentViaGSN(this.web3, receipt.transactionHash);
+    });
+
+    it('returns different gas when sent via GSN', async function () {
+      const tx = this.greeter.methods.greet("Hello world testing a long message in the greeting!");
+      const gsnGas = await tx.estimateGas();
+      const vanillaGas = await tx.estimateGas({ useGSN: false });
+      expect(parseInt(vanillaGas)).to.be.lessThan(parseInt(gsnGas));
+    });
+  });
 });
