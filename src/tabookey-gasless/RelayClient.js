@@ -12,7 +12,7 @@ const ethWallet = require('ethereumjs-wallet');
 const ethJsTx = require('ethereumjs-tx');
 const abi_decoder = require('abi-decoder');
 const BN = require('bignumber.js');
-const { appendAddress } = require('../utils');
+const { appendAddress, toInt } = require('../utils');
 
 const relayHubAbi = require('./IRelayHub');
 const relayRecipientAbi = require('./IRelayRecipient');
@@ -452,8 +452,8 @@ class RelayClient {
             from: params.from,
             to: params.to,
             txfee: params.txFee || params.txfee || relayClientOptions.txfee,
-            gas_limit: params.gas && parseInt(params.gas, 16),
-            gas_price: params.gasPrice && parseInt(params.gasPrice, 16),
+            gas_limit: params.gas && toInt(params.gas),
+            gas_price: params.gasPrice && toInt(params.gasPrice),
             approveFunction: params.approveFunction || this.config.approveFunction
         };
 

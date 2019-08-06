@@ -383,7 +383,19 @@ describe('GSNProvider', function () {
       const receipt = await this.greeter.methods.greet(LONG_MESSAGE).send({ from: this.signer });
       assertGreetedEvent(receipt, LONG_MESSAGE);
       await assertSentViaGSN(this.web3, receipt.transactionHash);
-    });
+      const sentTx = await this.web3.eth.getTransaction(receipt.transactionHash);
+      expect(parseInt(sentTx.gasPrice)).to.eq(20e9);
+    });  
+
+    [30e9, 30e9.toString(), ethUtil.addHexPrefix(30e9.toString(16))].forEach(gasPrice => {
+      it(`sends a tx via GSN with gas price set to ${gasPrice}`, async function () {
+        const receipt = await this.greeter.methods.greet(LONG_MESSAGE).send({ from: this.signer, gasPrice });
+        assertGreetedEvent(receipt, LONG_MESSAGE);
+        await assertSentViaGSN(this.web3, receipt.transactionHash);
+        const sentTx = await this.web3.eth.getTransaction(receipt.transactionHash);
+        expect(parseInt(sentTx.gasPrice)).to.eq(30e9);
+      });  
+    })
 
     it('fails to sends a tx via GSN with if gas price is too low', async function () {
       await expect(

@@ -1,4 +1,5 @@
 const ethUtils = require('ethereumjs-util');
+const BN = require('bignumber.js');
 
 function appendAddress(data, address) {
   return data + ethUtils.setLengthLeft(ethUtils.toBuffer(address), 32).toString('hex');
@@ -19,8 +20,12 @@ function callAsJsonRpc(fn, args, id, callback, mapResponseFn = (x => ({ result: 
   }
 }
 
+function toInt(value) {
+  return new BN(value).toNumber();
+}
 
 module.exports = {
   appendAddress,
-  callAsJsonRpc
+  callAsJsonRpc,
+  toInt
 }
