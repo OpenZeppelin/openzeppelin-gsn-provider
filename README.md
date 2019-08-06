@@ -10,6 +10,33 @@
 npm install @openzeppelin/gsn-provider
 ```
 
+## Quickstart
+
+Just create a GSNProvider and use it to set up your web3 instance:
+
+```js
+const { GSNProvider } = require('@openzeppelin/gsn-provider');
+const web3 = new Web3(new GSNProvider('http://localhost:8545'));
+```
+
+### With openzeppelin/network.js
+
+You can set up a GSN-powered web3 instance in your dapp using [`@openzeppelin/network`](https://github.com/OpenZeppelin/openzeppelin-network.js), a package designed for easily setting up your connection to the Ethereum network. 
+
+```js
+import { useWeb3Network } from '@openzeppelin/network';
+const local = useWeb3Network('http://127.0.0.1:8545', { gsn: true });
+```
+
+You can also create a signing key on the spot:
+
+```js
+import { useWeb3Network, useEphemeralKey } from '@openzeppelin/network';
+const local = useWeb3Network('http://127.0.0.1:8545', { 
+  gsn: { signKey: useEphemeralKey() } 
+});
+```
+
 ## Usage
 
 Create a new `GSNProvider` and inject it into a new `web3` instance:
