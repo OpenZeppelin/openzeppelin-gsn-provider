@@ -357,7 +357,7 @@ class RelayClient {
                     from: options.from,
                     to: options.to,
                     encodedFunctionCall: encodedFunctionCall,
-                    txfee: options.txfee,
+                    txfee,
                     gas_price: gasPrice,
                     gas_limit: gasLimit,
                     nonce: nonce,
