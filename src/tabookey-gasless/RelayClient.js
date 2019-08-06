@@ -290,7 +290,7 @@ class RelayClient {
         this.serverHelper.setHub(relayHub);
 
         //gas-price multiplicator: either default (10%) or configuration factor
-        let pct = (this.config.gaspriceFactorPercent || GASPRICE_PERCENT);
+        let pct = (this.config.gasPriceFactorPercent || this.config.gaspriceFactorPercent || GASPRICE_PERCENT);
 
         let network_gas_price = await this.web3.eth.getGasPrice();
         // Sometimes, xDai netwiork returns '0'
@@ -298,12 +298,13 @@ class RelayClient {
             network_gas_price = 1e9;
         }
 
-        let gasPrice = this.config.force_gasPrice ||  //forced gasprice
+        let gasPrice = this.config.fixedGasPrice ||  //forced gasprice
+            this.config.force_gasPrice ||
             options.gas_price ||        //user-supplied gas price
             Math.round((network_gas_price) * (pct + 100) / 100);
 
         //TODO: should add gas estimation for encodedFunctionCall (tricky, since its not a real transaction)
-        let gasLimit = this.config.force_gasLimit || options.gas_limit;
+        let gasLimit = this.config.fixedGasLimit || this.config.force_gasLimit || options.gas_limit;
 
         // If we don't have a gas limit, then estimate it, since we need a concrete value for checking the recipient balance
         try {
@@ -377,7 +378,7 @@ class RelayClient {
             }
 
             // max nonce is not signed, as contracts cannot access addresses' nonces.
-            let allowed_relay_nonce_gap = this.config.allowed_relay_nonce_gap;
+            let allowed_relay_nonce_gap = this.config.allowed_relay_nonce_gap || this.config.allowedRelayNonceGap;
             if (typeof allowed_relay_nonce_gap === "undefined") {
                 allowed_relay_nonce_gap = 3
             }
@@ -407,7 +408,7 @@ class RelayClient {
                         from: options.from,
                         to: options.to,
                         encodedFunctionCall,
-                        txfee: options.txfee,
+                        txfee,
                         gasPrice,
                         gasLimit,
                         nonce,
@@ -451,7 +452,7 @@ class RelayClient {
         let relayOptions = {
             from: params.from,
             to: params.to,
-            txfee: params.txFee || params.txfee || relayClientOptions.txfee,
+            txfee: params.txFee || params.txfee || relayClientOptions.txFee || relayClientOptions.txfee,
             gas_limit: params.gas && toInt(params.gas),
             gas_price: params.gasPrice && toInt(params.gasPrice),
             approveFunction: params.approveFunction || this.config.approveFunction

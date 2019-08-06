@@ -17,10 +17,10 @@ const LONG_MESSAGE = 'Hello world testing a long message in the greeting!';
 
 // Hardcoded options for the relay client to always get a tx through
 const HARDCODED_RELAYER_OPTS = {
-  txfee: 90,
-  force_gasPrice: 22000000001,
+  txFee: 90,
+  fixedGasPrice: 22000000001,
   gasPrice: 22000000001,
-  force_gasLimit: 500000,
+  fixedGasLimit: 500000,
   gasLimit: 500000,
   verbose: false
 };
@@ -336,7 +336,7 @@ describe('GSNProvider', function () {
   context('on gas estimations', function () {
     beforeEach(function () {
       // Remove gas limit hardcoded options
-      const opts = omit(HARDCODED_RELAYER_OPTS, ['force_gasLimit', 'gasLimit']);
+      const opts = omit(HARDCODED_RELAYER_OPTS, ['force_gasLimit', 'gasLimit', 'fixedGasLimit']);
       const gsnProvider = new GSNProvider(PROVIDER_URL, opts);
       this.greeter.setProvider(gsnProvider);
     });
@@ -393,7 +393,7 @@ describe('GSNProvider', function () {
   context('on gas price', function () {
     beforeEach(function () {
       // Remove gas price hardcoded options
-      const opts = omit(HARDCODED_RELAYER_OPTS, ['gasPrice', 'gas_price', 'force_gasPrice', 'force_gasprice']);
+      const opts = omit(HARDCODED_RELAYER_OPTS, ['gasPrice', 'gas_price', 'force_gasPrice', 'force_gasprice', 'fixedGasPrice']);
       const gsnProvider = new GSNProvider(PROVIDER_URL, opts);
       this.greeter.setProvider(gsnProvider);
     });
@@ -425,7 +425,7 @@ describe('GSNProvider', function () {
 
   context('on gas price percent', function () {
     const setGsnProviderWithGasPriceFactorPercent = function (contract, percent) {
-      const opts = omit(HARDCODED_RELAYER_OPTS, ['gasPrice', 'gas_price', 'force_gasPrice', 'force_gasprice']);
+      const opts = omit(HARDCODED_RELAYER_OPTS, ['gasPrice', 'gas_price', 'force_gasPrice', 'force_gasprice', 'fixedGasPrice']);
       const gsnProvider = new GSNProvider(PROVIDER_URL, { ... opts, gaspriceFactorPercent: percent });
       contract.setProvider(gsnProvider);
       contract.options.gasPrice = null;

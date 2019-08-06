@@ -99,9 +99,9 @@ Available options for the `GSNProvider`:
 * `useGSN (bool)`: whether to send meta txs by default, or a function that receives a payload and returns whether to use a meta tx (defaults to true).
 * `signKey (hex string)`: optional private key to sign the meta txs, using the underlying provider `sign` if not set.
 * `approveFunction (function)`: optional function for generating application approval data for a transaction, and returns a `byte32` signature that can be checked in the recipient.
-* `gaspriceFactorPercent (integer)`: percentage increase over the network gas price for gsn transactions (defaults to 20, note that you need to clear web3 default fixed gasprice for this setting to go into effect).
-* `force_gasPrice (integer|string)`: fixed gas price to use in all gsn transactions.
-* `force_gasLimit (integer|string)`: fixed gas limit to use in all gsn transactions.
+* `gasPriceFactorPercent (integer)`: percentage increase over the network gas price for gsn transactions (defaults to 20, note that you need to clear web3 default fixed gasprice for this setting to go into effect).
+* `fixedGasPrice (integer|string)`: fixed gas price to use in all gsn transactions.
+* `fixedGasLimit (integer|string)`: fixed gas limit to use in all gsn transactions.
 * `minStake (integer)`: filters out relays with stake below this value (optional)
 * `minDelay (integer)`: filters out relays with unstake delay below this value (optional)
 * `verbose (bool)`: a boolean to turn on verbose output (defaults to false)
@@ -109,7 +109,7 @@ Available options for the `GSNProvider`:
 Advanced options for the provider (most likely you will not need these ones):
 
 * `httpTimeout (integer)`: timeout in ms for HTTP requests to relayers (defaults to 10000).
-* `allowed_relay_nonce_gap (integer)`: (defaults to 3)
+* `allowedRelayNonceGap (integer)`: (defaults to 3)
 * `relayTimeoutGrace (integer)`: whenever a relayer timeouts a request, it is downscored by the client, and this penalization is reset every `relayTimeoutGrace` seconds (defaults to 1800, 30 mins)
 * `calculateRelayScore (function)`: given a relayer, must return a numeric score (the higher the better) to rank it (defaults to using the transaction fee and penalizations due to timeouts, maxes at 1000)
 * `relayFilter (function)`: given a relayer, must return a boolean indicating whether it is elligible (defaults to using `minDelay` and `minStake`)
