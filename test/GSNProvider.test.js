@@ -1,10 +1,11 @@
 const Web3 = require('web3');
+const { omit } = require('lodash');
+const { generate } = require('ethereumjs-wallet');
+const ethUtil = require('ethereumjs-util');
 const { fundRecipient, relayHub } = require('@openzeppelin/gsn-helpers');
 const { GSNProvider } = require('../src');
 const { abi: GreeterAbi, bytecode: GreeterBytecode } = require('./build/contracts/Greeter.json');
 const { abi: VanillaGreeterAbi, bytecode: VanillaGreeterBytecode } = require('./build/contracts/VanillaGreeter.json');
-const { generate } = require('ethereumjs-wallet');
-const ethUtil = require('ethereumjs-util');
 
 const expect = require('chai')
   .use(require('chai-as-promised'))
@@ -12,6 +13,7 @@ const expect = require('chai')
 
 const PROVIDER_URL = process.env.PROVIDER_URL || 'http://localhost:9545';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const LONG_MESSAGE = 'Hello world testing a long message in the greeting!';
 
 // Options we have been carrying over to get the relay client to work
 // We need to look into them, document them, and properly configure them here
@@ -78,7 +80,7 @@ describe('GSNProvider', function () {
 
   beforeEach('setting up sample contract', async function () {
     const Greeter = new this.web3.eth.Contract(GreeterAbi, null, { data: GreeterBytecode});
-    this.greeter = await Greeter.deploy().send({ from: this.deployer, gas: 1e6 });
+    this.greeter = await Greeter.deploy().send({ from: this.deployer, gas: 2e6 });
     await fundRecipient(this.web3, { recipient: this.greeter.options.address });
   });
 
@@ -251,14 +253,14 @@ describe('GSNProvider', function () {
     it('throws if attempting to create a contract', async function () {
       const Greeter = new this.web3gsn.eth.Contract(GreeterAbi, null, { data: GreeterBytecode});
       await expect (
-        Greeter.deploy().send({ from: this.deployer, gas: 1e6 })
+        Greeter.deploy().send({ from: this.deployer, gas: 3e6 })
       ).to.be.rejectedWith(/cannot deploy/i);
     });
 
     it('creates a contract if disables gsn', async function () {
       const Greeter = new this.web3gsn.eth.Contract(GreeterAbi, null, { data: GreeterBytecode});
       await expect (
-        Greeter.deploy().send({ from: this.deployer, gas: 1e6, useGSN: false })
+        Greeter.deploy().send({ from: this.deployer, gas: 3e6, useGSN: false })
       ).to.be.fulfilled;
     });
 
@@ -321,7 +323,7 @@ describe('GSNProvider', function () {
 
     it('throws if recipient does not respond hub addr', async function () {
       const VanillaGreeter = new this.web3.eth.Contract(VanillaGreeterAbi, null, { data: VanillaGreeterBytecode});
-      const greeter = await VanillaGreeter.deploy().send({ from: this.deployer, gas: 1e6 });
+      const greeter = await VanillaGreeter.deploy().send({ from: this.deployer, gas: 3e6 });
       greeter.setProvider(this.gsnProvider);
 
       await expect (
@@ -331,7 +333,7 @@ describe('GSNProvider', function () {
 
     it('throws if recipient is not funded', async function () {
       const Greeter = new this.web3.eth.Contract(GreeterAbi, null, { data: GreeterBytecode});
-      const greeter = await Greeter.deploy().send({ from: this.deployer, gas: 1e6 });
+      const greeter = await Greeter.deploy().send({ from: this.deployer, gas: 3e6 });
       greeter.setProvider(this.gsnProvider);
 
       await expect (
@@ -341,7 +343,7 @@ describe('GSNProvider', function () {
 
     it('throws if recipient has not enough funds', async function () {
       const Greeter = new this.web3.eth.Contract(GreeterAbi, null, { data: GreeterBytecode});
-      const greeter = await Greeter.deploy().send({ from: this.deployer, gas: 1e6 });
+      const greeter = await Greeter.deploy().send({ from: this.deployer, gas: 3e6 });
       // TODO: fundRecipient should accept strings or numbers
       await fundRecipient(this.web3, { amount: new Web3.utils.BN(1e8), recipient: greeter.options.address });
       greeter.setProvider(this.gsnProvider);
@@ -355,26 +357,57 @@ describe('GSNProvider', function () {
   context('on gas estimations', function () {
     beforeEach(function () {
       // Remove gas limit hardcoded options
-      const opts = { ... SHAMEFUL_RELAYER_OPTS };
-      delete opts.force_gasLimit;
-      delete opts.gasLimit;
+      const opts = omit(SHAMEFUL_RELAYER_OPTS, ['force_gasLimit', 'gasLimit']);
       const gsnProvider = new GSNProvider(PROVIDER_URL, opts);
       this.greeter.setProvider(gsnProvider);
     });
 
     it('sends a tx via GSN with estimated gas', async function () {
-      const tx = this.greeter.methods.greet("Hello world testing a long message in the greeting!");
-      const gas = await tx.estimateGas();
+      const tx = this.greeter.methods.greetFrom(this.signer, LONG_MESSAGE);
+      const gas = await tx.estimateGas({ from: this.signer });
       const receipt = await tx.send({ from: this.signer, gas });
-      assertGreetedEvent(receipt, "Hello world testing a long message in the greeting!");
+      assertGreetedEvent(receipt, LONG_MESSAGE);
       await assertSentViaGSN(this.web3, receipt.transactionHash);
     });
 
     it('returns different gas when sent via GSN', async function () {
-      const tx = this.greeter.methods.greet("Hello world testing a long message in the greeting!");
-      const gsnGas = await tx.estimateGas();
-      const vanillaGas = await tx.estimateGas({ useGSN: false });
+      const tx = this.greeter.methods.greetFrom(this.signer, LONG_MESSAGE);
+      const gsnGas = await tx.estimateGas({ from: this.signer });
+      const vanillaGas = await tx.estimateGas({ useGSN: false, from: this.signer });
       expect(parseInt(vanillaGas)).to.be.lessThan(parseInt(gsnGas));
+    });
+
+    it('send a GSN tx without explicit gas limit', async function () {
+      const receipt = await this.greeter.methods.greetFrom(this.signer, LONG_MESSAGE).send({ from: this.signer })
+      assertGreetedEvent(receipt, LONG_MESSAGE);
+      await assertSentViaGSN(this.web3, receipt.transactionHash);
+    });
+
+    it('sends a vanilla tx without explicit gas limit', async function () {
+      const receipt = await this.greeter.methods.greetFrom(this.signer, LONG_MESSAGE).send({ from: this.signer, useGSN: false })
+      assertGreetedEvent(receipt, LONG_MESSAGE);
+      await assertNotSentViaGSN(this.web3, receipt.transactionHash);
+    });
+  });
+
+  context('on tx fees', function () {
+    beforeEach(function () {
+      // Remove tx fee hardcoded options
+      const opts = omit(SHAMEFUL_RELAYER_OPTS, ['txfee', 'txFee']);
+      const gsnProvider = new GSNProvider(PROVIDER_URL, opts);
+      this.greeter.setProvider(gsnProvider);
+    });
+
+    it('sends a tx via GSN with fee required by the relayer', async function () {
+      const receipt = await this.greeter.methods.greet("Hello").send({ from: this.signer });
+      assertGreetedEvent(receipt, "Hello");
+      await assertSentViaGSN(this.web3, receipt.transactionHash);
+    });
+
+    it('fails to sends a tx via GSN with if fee is too low', async function () {
+      await expect(
+        this.greeter.methods.greet("Hello").send({ from: this.signer, txFee: 1 })
+      ).to.be.rejectedWith(/no relay/i)
     });
   });
 });

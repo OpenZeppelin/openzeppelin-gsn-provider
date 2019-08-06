@@ -23,6 +23,11 @@ contract Greeter is IRelayRecipient, GSNContext, VanillaGreeter {
     emit Greeted(_msgSender(), message);
   }
 
+  function greetFrom(address sender, string memory message) public payable {
+    require(sender == _msgSender());
+    greet(message);
+  }
+
   function reverts() public {
     emit Greeted(_msgSender(), "Error");
     revert("GreetingError");

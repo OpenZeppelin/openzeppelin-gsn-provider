@@ -1,6 +1,7 @@
 const Web3 = require('web3');
 const RelayClient = require('./tabookey-gasless/RelayClient');
 const PrivateKeyProvider = require('./PrivateKeyProvider');
+const { callAsJsonRpc } = require('./utils');
 
 class GSNProvider {
   constructor(base, options = {}) {
@@ -79,18 +80,10 @@ class GSNProvider {
   _handleEstimateGas(payload, callback) {
     const txParams = payload.params[0];
     if (!this._withGSN(payload, txParams)) return false;
-
-    this.relayClient.createRelayHubFromRecipient(txParams.to)
-      .then(hub => {
-        const payloadFromHub = { 
-          ... payload,
-          params: [ { ... txParams, from: hub.options.address } ]
-        };
-        this.baseSend(payloadFromHub, callback);
-      })
-      .catch(err => {
-        callback(err, null);
-      });
+    callAsJsonRpc(
+      this.relayClient.estimateGas.bind(this.relayClient), [txParams], 
+      payload.id, callback
+    );
     
     return true;
   }

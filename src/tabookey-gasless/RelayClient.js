@@ -12,6 +12,7 @@ const ethWallet = require('ethereumjs-wallet');
 const ethJsTx = require('ethereumjs-tx');
 const abi_decoder = require('abi-decoder');
 const BN = require('bignumber.js');
+const { appendAddress } = require('../utils');
 
 const relayHubAbi = require('./IRelayHub');
 const relayRecipientAbi = require('./IRelayRecipient');
@@ -304,6 +305,15 @@ class RelayClient {
         //TODO: should add gas estimation for encodedFunctionCall (tricky, since its not a real transaction)
         let gasLimit = this.config.force_gasLimit || options.gas_limit;
 
+        // If we don't have a gas limit, then estimate it, since we need a concrete value for checking the recipient balance
+        try {
+            if (!gasLimit) gasLimit = await this.estimateGas({
+                ... options, gasPrice, data: encodedFunctionCall
+            }, relayHub.options.address);
+        } catch (err) {
+            throw new Error(`Error estimating gas usage for transaction (${err.message}). Make sure the transaction is valid, or set a fixed gas value.`);
+        }
+
         // Check that the recipient has enough balance in the hub, assuming a relaying fee of zero
         await this.validateRecipientBalance(relayHub, options.to, gasLimit, gasPrice, 0);
         
@@ -546,6 +556,19 @@ class RelayClient {
         if (BN(maxCharge).isGreaterThan(BN(balance))) {
             throw new Error(`Recipient ${recipient} has not enough funds for paying for this relayed call (has ${balance}, requires ${maxCharge}).`);
         }
+    }
+
+    async estimateGas(txParams, hubAddress) {
+        if (!hubAddress) {
+            const hub = await this.createRelayHubFromRecipient(txParams.to);
+            hubAddress = hub.options.address;
+        }
+        const txParamsFromHub = {
+            ... txParams, 
+            from: hubAddress,
+            data: appendAddress(txParams.data, txParams.from)
+        }
+        return this.web3.eth.estimateGas(txParamsFromHub);
     }
 }
 
