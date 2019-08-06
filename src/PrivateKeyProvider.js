@@ -1,5 +1,5 @@
 const { fromPrivateKey } = require('ethereumjs-wallet');
-const { callbackify } = require('util');
+const { callAsJsonRpc } = require('./utils');
 const ethUtil = require('ethereumjs-util')
 const sigUtil = require('eth-sig-util')
 const EthereumTx = require('ethereumjs-tx')
@@ -25,24 +25,24 @@ class PrivateKeyProvider {
     switch (payload.method) {
       
       case 'eth_accounts':
-        this._callAsJsonRpc(
-          this.ethAccounts, [], 
+        callAsJsonRpc(
+          this.ethAccounts.bind(this), [], 
           id, callback
         );
         break;
       
       case 'eth_sign':
         [from, data] = payload.params;
-        this._callAsJsonRpc(
-          this.ethSign, [from, data], 
+        callAsJsonRpc(
+          this.ethSign.bind(this), [from, data], 
           id, callback
         );
         break;
       
       case 'eth_signTransaction':
         [txParams] = payload.params;
-        this._callAsJsonRpc(
-          this.ethSignTransaction, [txParams], 
+        callAsJsonRpc(
+          this.ethSignTransaction.bind(this), [txParams], 
           id, callback, 
           signedTx => ({ tx: txParams, raw: signedTx })
         );
@@ -50,8 +50,8 @@ class PrivateKeyProvider {
       
       case 'eth_signTypedData':
         [from, data] = payload.params;
-        this._callAsJsonRpc(
-          this.ethSignTypedData, [from, data], 
+        callAsJsonRpc(
+          this.ethSignTypedData.bind(this), [from, data], 
           id, callback
         );
         break;
@@ -62,16 +62,16 @@ class PrivateKeyProvider {
       
       case 'personal_sign':
         [data, from] = payload.params;
-        this._callAsJsonRpc(
-          this.personalSign, [from, data],
+        callAsJsonRpc(
+          this.personalSign.bind(this), [from, data],
           id, callback
         );
         break;
       
       case 'personal_ecRecover':
         [data, signature] = payload.params;
-        this._callAsJsonRpc(
-          this.personalEcRecover, [data, signature],
+        callAsJsonRpc(
+          this.personalEcRecover.bind(this), [data, signature],
           id, callback
         );
         break;
@@ -135,21 +135,6 @@ class PrivateKeyProvider {
     return ethUtil.bufferToHex(tx.serialize());
   }
 
-  _callAsJsonRpc(fn, args, id, callback, mapResponseFn = (x => ({ result: x }))) {
-    const response = { jsonrpc: "2.0", id };
-    try {
-      fn.apply(this, args)
-        .then(result => { 
-          callback(null, { ...response, ...mapResponseFn(result) });
-        })
-        .catch(err => { 
-          callback({ ...response, error: err.toString() }, null);
-        });
-    } catch (err) {
-      callback({ ... response, error: err.toString() });
-    }
-  }
-  
   _validateSigner(signer) {
     if (!signer) {
       throw new Error(`Signer address is required`);
