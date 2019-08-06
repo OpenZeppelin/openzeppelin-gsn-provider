@@ -16,7 +16,7 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const LONG_MESSAGE = 'Hello world testing a long message in the greeting!';
 
 // Hardcoded options for the relay client to always get a tx through
-const SHAMEFUL_RELAYER_OPTS = {
+const HARDCODED_RELAYER_OPTS = {
   txfee: 90,
   force_gasPrice: 22000000001,
   gasPrice: 22000000001,
@@ -46,7 +46,7 @@ describe('GSNProvider', function () {
 
   context('with default gsn provider', function () {
     beforeEach(function () {
-      const gsnProvider = new GSNProvider(PROVIDER_URL, SHAMEFUL_RELAYER_OPTS);
+      const gsnProvider = new GSNProvider(PROVIDER_URL, HARDCODED_RELAYER_OPTS);
       this.greeter.setProvider(gsnProvider);
     });
 
@@ -61,12 +61,31 @@ describe('GSNProvider', function () {
       assertGreetedEvent(tx);
       await assertNotSentViaGSN(this.web3, tx.transactionHash);
     });
-  })
+  });
+
+  context('with gsn provider without options', function () {
+    beforeEach(function () {
+      const gsnProvider = new GSNProvider(PROVIDER_URL);
+      this.greeter.setProvider(gsnProvider);
+    });
+
+    it('sends a tx via GSN by default', async function () {
+      const tx = await this.greeter.methods.greet("Hello").send({ from: this.signer });
+      assertGreetedEvent(tx);
+      await assertSentViaGSN(this.web3, tx.transactionHash);
+    });
+  
+    it('skips GSN if specified in tx opts', async function () {
+      const tx = await this.greeter.methods.greet("Hello").send({ from: this.sender, useGSN: false });
+      assertGreetedEvent(tx);
+      await assertNotSentViaGSN(this.web3, tx.transactionHash);
+    });
+  });
   
   context('with gsn provider disabled by default', function () {
     beforeEach(function () {
       const gsnProvider = new GSNProvider(PROVIDER_URL, {
-        ... SHAMEFUL_RELAYER_OPTS,
+        ... HARDCODED_RELAYER_OPTS,
         useGSN: false
       });
       this.greeter.setProvider(gsnProvider);
@@ -89,7 +108,7 @@ describe('GSNProvider', function () {
     beforeEach(function () {
       this.signKey = createSignKey();
       this.gsnProvider = new GSNProvider(PROVIDER_URL, {
-        ... SHAMEFUL_RELAYER_OPTS, 
+        ... HARDCODED_RELAYER_OPTS, 
         signKey: this.signKey
       });
       this.greeter.setProvider(this.gsnProvider);
@@ -140,13 +159,13 @@ describe('GSNProvider', function () {
     });
 
     it('subscribes to events with gsn ws provider', async function () {
-      const gsnProvider = new GSNProvider(PROVIDER_URL.replace(/^http/, 'ws'), SHAMEFUL_RELAYER_OPTS);
+      const gsnProvider = new GSNProvider(PROVIDER_URL.replace(/^http/, 'ws'), HARDCODED_RELAYER_OPTS);
       await testSubscription.call(this, gsnProvider);
     });
 
     it('subscribes to events with gsn ws provider with sign key', async function () {
       const gsnProvider = new GSNProvider(PROVIDER_URL.replace(/^http/, 'ws'), {
-        ... SHAMEFUL_RELAYER_OPTS,
+        ... HARDCODED_RELAYER_OPTS,
         signKey: createSignKey()
       });
       await testSubscription.call(this, gsnProvider);
@@ -155,7 +174,7 @@ describe('GSNProvider', function () {
 
   context('on gsn errors', function () {
     beforeEach(function () {
-      const gsnProvider = new GSNProvider(PROVIDER_URL, { ...SHAMEFUL_RELAYER_OPTS });
+      const gsnProvider = new GSNProvider(PROVIDER_URL, { ...HARDCODED_RELAYER_OPTS });
       this.greeter.setProvider(gsnProvider);
     });
 
@@ -186,7 +205,7 @@ describe('GSNProvider', function () {
 
   context('on gsn errors with gsn disabled by default', function () {
     beforeEach(function () {
-      const gsnProvider = new GSNProvider(PROVIDER_URL, { ...SHAMEFUL_RELAYER_OPTS, useGSN: false });
+      const gsnProvider = new GSNProvider(PROVIDER_URL, { ...HARDCODED_RELAYER_OPTS, useGSN: false });
       this.greeter.setProvider(gsnProvider);
     });
 
@@ -205,7 +224,7 @@ describe('GSNProvider', function () {
 
   context('on illegal gsn actions', function () {
     beforeEach(function () {
-      const gsnProvider = new GSNProvider(PROVIDER_URL, { ...SHAMEFUL_RELAYER_OPTS });
+      const gsnProvider = new GSNProvider(PROVIDER_URL, { ...HARDCODED_RELAYER_OPTS });
       this.greeter.setProvider(gsnProvider);
       this.web3gsn = new Web3(gsnProvider);
     });
@@ -245,7 +264,7 @@ describe('GSNProvider', function () {
 
   context('on invalid hub', async function () {
     beforeEach(function () {
-      this.gsnProvider = new GSNProvider(PROVIDER_URL, { ...SHAMEFUL_RELAYER_OPTS });
+      this.gsnProvider = new GSNProvider(PROVIDER_URL, { ...HARDCODED_RELAYER_OPTS });
     });
 
     it('throws if hub is the zero address', async function () {
@@ -278,7 +297,7 @@ describe('GSNProvider', function () {
 
   context('on invalid recipient', async function () {
     beforeEach(function () {
-      this.gsnProvider = new GSNProvider(PROVIDER_URL, { ...SHAMEFUL_RELAYER_OPTS });
+      this.gsnProvider = new GSNProvider(PROVIDER_URL, { ...HARDCODED_RELAYER_OPTS });
     });
 
     it('throws if recipient does not respond hub addr', async function () {
@@ -317,7 +336,7 @@ describe('GSNProvider', function () {
   context('on gas estimations', function () {
     beforeEach(function () {
       // Remove gas limit hardcoded options
-      const opts = omit(SHAMEFUL_RELAYER_OPTS, ['force_gasLimit', 'gasLimit']);
+      const opts = omit(HARDCODED_RELAYER_OPTS, ['force_gasLimit', 'gasLimit']);
       const gsnProvider = new GSNProvider(PROVIDER_URL, opts);
       this.greeter.setProvider(gsnProvider);
     });
@@ -353,7 +372,7 @@ describe('GSNProvider', function () {
   context('on tx fees', function () {
     beforeEach(function () {
       // Remove tx fee hardcoded options
-      const opts = omit(SHAMEFUL_RELAYER_OPTS, ['txfee', 'txFee']);
+      const opts = omit(HARDCODED_RELAYER_OPTS, ['txfee', 'txFee']);
       const gsnProvider = new GSNProvider(PROVIDER_URL, opts);
       this.greeter.setProvider(gsnProvider);
     });
@@ -374,7 +393,7 @@ describe('GSNProvider', function () {
   context('on gas price', function () {
     beforeEach(function () {
       // Remove gas price hardcoded options
-      const opts = omit(SHAMEFUL_RELAYER_OPTS, ['gasPrice', 'gas_price', 'force_gasPrice', 'force_gasprice']);
+      const opts = omit(HARDCODED_RELAYER_OPTS, ['gasPrice', 'gas_price', 'force_gasPrice', 'force_gasprice']);
       const gsnProvider = new GSNProvider(PROVIDER_URL, opts);
       this.greeter.setProvider(gsnProvider);
     });
@@ -406,7 +425,7 @@ describe('GSNProvider', function () {
 
   context('on gas price percent', function () {
     const setGsnProviderWithGasPriceFactorPercent = function (contract, percent) {
-      const opts = omit(SHAMEFUL_RELAYER_OPTS, ['gasPrice', 'gas_price', 'force_gasPrice', 'force_gasprice']);
+      const opts = omit(HARDCODED_RELAYER_OPTS, ['gasPrice', 'gas_price', 'force_gasPrice', 'force_gasprice']);
       const gsnProvider = new GSNProvider(PROVIDER_URL, { ... opts, gaspriceFactorPercent: percent });
       contract.setProvider(gsnProvider);
       contract.options.gasPrice = null;
