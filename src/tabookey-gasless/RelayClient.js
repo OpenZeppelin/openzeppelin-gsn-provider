@@ -246,8 +246,13 @@ class RelayClient {
             // see the EIP for description of the attack
 
             //don't display error for the known-good cases
-            if (!("" + error).match(/the tx doesn't have the correct nonce|known transaction/))
-                console.log("broadcastTx: ", error || result);
+            if (!("" + error).match(/the tx doesn't have the correct nonce|known transaction/)) {
+                if (self.config.verbose) {
+                    // TODO: Should we actually bubble up an error?
+                    console.log("broadcastTx: ", error || result);
+                }
+            }
+                
 
             if (error) {
                 //note that nonce-related errors at this point are VALID reponses: it means that
