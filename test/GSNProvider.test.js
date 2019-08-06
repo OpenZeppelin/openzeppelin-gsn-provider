@@ -15,8 +15,7 @@ const PROVIDER_URL = process.env.PROVIDER_URL || 'http://localhost:9545';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const LONG_MESSAGE = 'Hello world testing a long message in the greeting!';
 
-// Options we have been carrying over to get the relay client to work
-// We need to look into them, document them, and properly configure them here
+// Hardcoded options for the relay client to always get a tx through
 const SHAMEFUL_RELAYER_OPTS = {
   txfee: 90,
   force_gasPrice: 22000000001,
@@ -26,48 +25,9 @@ const SHAMEFUL_RELAYER_OPTS = {
   verbose: false
 };
 
-// Assertions to polish and move to gsn helpers
-const assertSentViaGSN = async function(web3, txHash, opts = {}) {
-  const abiDecoder = require('abi-decoder');
-  abiDecoder.addABI(relayHub.abi);
-
-  const receipt = await web3.eth.getTransactionReceipt(txHash);
-  expect(receipt.to.toLowerCase()).to.eq(relayHub.address.toLowerCase());
-  
-  const logs = abiDecoder.decodeLogs(receipt.logs);
-  const relayed = logs.find(log => log && log.name === 'TransactionRelayed');
-  expect(relayed).to.exist;
-
-  const from = relayed.events.find(e => e.name === 'from');
-  if (opts.from) expect(from.value.toLowerCase()).to.eq(opts.from.toLowerCase());
-  
-  const to = relayed.events.find(e => e.name === 'to');
-  if (opts.to) expect(to.value.toLowerCase()).to.eq(opts.to.toLowerCase());
-}
-
-const assertNotSentViaGSN = async function(web3, txHash) {
-  const receipt = await web3.eth.getTransactionReceipt(txHash);
-  expect(receipt.to.toLowerCase()).to.not.eq(relayHub.address.toLowerCase());
-}
-
-// Custom assertions for this suite
-const assertGreetedEvent = function(txReceipt, value='Hello') {
-  expect(txReceipt.events.Greeted).to.exist;
-  expect(txReceipt.events.Greeted.returnValues.message).to.eq(value);
-}
-
-// Helpers
-function createSignKey() {
-  const wallet = generate();
-  return {
-    privateKey: wallet.privKey,
-    address: ethUtil.toChecksumAddress(ethUtil.bufferToHex(wallet.getAddress()))
-  };
-}
-
 describe('GSNProvider', function () {
   before('setting up web3', async function () {
-    this.web3 = new Web3(PROVIDER_URL, { gasPrice: 1e9 });
+    this.web3 = new Web3(PROVIDER_URL);
     this.accounts = await this.web3.eth.getAccounts();
     expect(this.accounts).to.have.lengthOf(10);
 
@@ -410,4 +370,94 @@ describe('GSNProvider', function () {
       ).to.be.rejectedWith(/no relay/i)
     });
   });
+
+  context('on gas price', function () {
+    beforeEach(function () {
+      // Remove gas price hardcoded options
+      const opts = omit(SHAMEFUL_RELAYER_OPTS, ['gasPrice', 'gas_price', 'force_gasPrice', 'force_gasprice']);
+      const gsnProvider = new GSNProvider(PROVIDER_URL, opts);
+      this.greeter.setProvider(gsnProvider);
+    });
+
+    it('sends a tx via GSN without gas price set', async function () {
+      const receipt = await this.greeter.methods.greet(LONG_MESSAGE).send({ from: this.signer });
+      assertGreetedEvent(receipt, LONG_MESSAGE);
+      await assertSentViaGSN(this.web3, receipt.transactionHash);
+    });
+
+    it('fails to sends a tx via GSN with if gas price is too low', async function () {
+      await expect(
+        this.greeter.methods.greet("Hello").send({ from: this.signer, gasPrice: 1 })
+      ).to.be.rejectedWith(/no relay/i)
+    });
+  });
+
+  context('on gas price percent', function () {
+    const setGsnProviderWithGasPriceFactorPercent = function (contract, percent) {
+      const opts = omit(SHAMEFUL_RELAYER_OPTS, ['gasPrice', 'gas_price', 'force_gasPrice', 'force_gasprice']);
+      const gsnProvider = new GSNProvider(PROVIDER_URL, { ... opts, gaspriceFactorPercent: percent });
+      contract.setProvider(gsnProvider);
+      contract.options.gasPrice = null;
+    };
+    
+    it('sends a tx via GSN with reasonable gas price percent', async function () {
+      setGsnProviderWithGasPriceFactorPercent(this.greeter, 30);
+
+      const receipt = await this.greeter.methods.greet(LONG_MESSAGE).send({ from: this.signer });
+      assertGreetedEvent(receipt, LONG_MESSAGE);
+      await assertSentViaGSN(this.web3, receipt.transactionHash);
+      
+      const sentTx = await this.web3.eth.getTransaction(receipt.transactionHash);
+      expect(parseInt(sentTx.gasPrice)).to.eq(20000000000 * 1.3);
+    });
+
+    it('fails to sends a tx via GSN with if gas price percent is too low', async function () {
+      setGsnProviderWithGasPriceFactorPercent(this.greeter, -5);
+
+      await expect(
+        this.greeter.methods.greet("Hello").send({ from: this.signer })
+      ).to.be.rejectedWith(/no relay/i)
+    });
+  });
 });
+
+// Assertions to polish and move to gsn helpers
+const assertSentViaGSN = async function(web3, txHash, opts = {}) {
+  const abiDecoder = require('abi-decoder');
+  abiDecoder.addABI(relayHub.abi);
+
+  const receipt = await web3.eth.getTransactionReceipt(txHash);
+  expect(receipt.to.toLowerCase()).to.eq(relayHub.address.toLowerCase());
+  
+  const logs = abiDecoder.decodeLogs(receipt.logs);
+  const relayed = logs.find(log => log && log.name === 'TransactionRelayed');
+  expect(relayed).to.exist;
+
+  const from = relayed.events.find(e => e.name === 'from');
+  if (opts.from) expect(from.value.toLowerCase()).to.eq(opts.from.toLowerCase());
+  
+  const to = relayed.events.find(e => e.name === 'to');
+  if (opts.to) expect(to.value.toLowerCase()).to.eq(opts.to.toLowerCase());
+
+  return receipt;
+}
+
+const assertNotSentViaGSN = async function(web3, txHash) {
+  const receipt = await web3.eth.getTransactionReceipt(txHash);
+  expect(receipt.to.toLowerCase()).to.not.eq(relayHub.address.toLowerCase());
+}
+
+// Custom assertions for this suite
+const assertGreetedEvent = function(txReceipt, value='Hello') {
+  expect(txReceipt.events.Greeted).to.exist;
+  expect(txReceipt.events.Greeted.returnValues.message).to.eq(value);
+}
+
+// Helpers
+function createSignKey() {
+  const wallet = generate();
+  return {
+    privateKey: wallet.privKey,
+    address: ethUtil.toChecksumAddress(ethUtil.bufferToHex(wallet.getAddress()))
+  };
+}

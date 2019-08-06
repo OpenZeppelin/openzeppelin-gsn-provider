@@ -41,7 +41,9 @@ class ActiveRelayPinger {
                     console.log("race finished with a champion: " + firstRelayToRespond.relayUrl)
                 }
             } catch (e) {
-                console.log("One batch of relays failed, last error: ", e)
+                if (this.verbose) {
+                    console.log("One batch of relays failed, last error: ", e)
+                }
                 //none of the first `bulkSize` items matched. remove them, to continue with the next bulk.
                 this.remainingRelays = this.remainingRelays.slice(bulkSize)
             }

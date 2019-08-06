@@ -33,7 +33,7 @@ relayer_running() {
 }
 
 start_ganache() {
-  npx ganache-cli --port "$ganache_port" -d --noVMErrorsOnRPCResponse &> /dev/null &
+  npx ganache-cli --port "$ganache_port" -g 20000000000 -d --noVMErrorsOnRPCResponse &> /dev/null &
   ganache_pid=$!
 
   echo "Waiting for ganache to launch on port "$ganache_port"..."
@@ -50,7 +50,7 @@ setup_gsn_relay() {
 
   echo "Launching GSN relay server to hub $relay_hub_addr"
 
-  ./bin/gsn-relay -DevMode -RelayHubAddress $relay_hub_addr -GasPricePercent -99 -EthereumNodeUrl $ganache_url -Url $relayer_url &> /dev/null &
+  ./bin/gsn-relay -DevMode -RelayHubAddress $relay_hub_addr -GasPricePercent 0 -EthereumNodeUrl $ganache_url -Url $relayer_url &> /dev/null &
   gsn_relay_server_pid=$!
 
   while ! relayer_running; do
