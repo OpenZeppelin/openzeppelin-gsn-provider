@@ -66,6 +66,7 @@ class PrivateKeyProvider {
           this.personalSign, [from, data],
           id, callback
         );
+        break;
       
       case 'personal_ecRecover':
         [data, signature] = payload.params;
@@ -73,6 +74,7 @@ class PrivateKeyProvider {
           this.personalEcRecover, [data, signature],
           id, callback
         );
+        break;
       
       default:
         return this.baseSend(payload, callback);
