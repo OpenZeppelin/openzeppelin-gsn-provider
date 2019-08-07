@@ -2,10 +2,12 @@ const Web3 = require('web3');
 const { omit } = require('lodash');
 const { generate } = require('ethereumjs-wallet');
 const ethUtil = require('ethereumjs-util');
-const { fundRecipient, relayHub } = require('@openzeppelin/gsn-helpers');
+const { fundRecipient, relayHub, getRelayHub } = require('@openzeppelin/gsn-helpers');
 const { GSNProvider } = require('../src');
 const { abi: GreeterAbi, bytecode: GreeterBytecode } = require('./build/contracts/Greeter.json');
 const { abi: VanillaGreeterAbi, bytecode: VanillaGreeterBytecode } = require('./build/contracts/VanillaGreeter.json');
+const sinon = require('sinon');
+const axios = require('axios');
 
 const expect = require('chai')
   .use(require('chai-as-promised'))
@@ -323,8 +325,7 @@ describe('GSNProvider', function () {
     it('throws if recipient has not enough funds', async function () {
       const Greeter = new this.web3.eth.Contract(GreeterAbi, null, { data: GreeterBytecode});
       const greeter = await Greeter.deploy().send({ from: this.deployer, gas: 3e6 });
-      // TODO: fundRecipient should accept strings or numbers
-      await fundRecipient(this.web3, { amount: new Web3.utils.BN(1e8), recipient: greeter.options.address });
+      await fundRecipient(this.web3, { amount: 1e8, recipient: greeter.options.address });
       greeter.setProvider(this.gsnProvider);
 
       await expect (
@@ -386,7 +387,7 @@ describe('GSNProvider', function () {
     it('fails to sends a tx via GSN with if fee is too low', async function () {
       await expect(
         this.greeter.methods.greet("Hello").send({ from: this.signer, txFee: 1 })
-      ).to.be.rejectedWith(/no relay/i)
+      ).to.be.rejectedWith(/no relayer.+fee/is)
     });
   });
 
@@ -419,7 +420,7 @@ describe('GSNProvider', function () {
     it('fails to sends a tx via GSN with if gas price is too low', async function () {
       await expect(
         this.greeter.methods.greet("Hello").send({ from: this.signer, gasPrice: 1 })
-      ).to.be.rejectedWith(/no relay/i)
+      ).to.be.rejectedWith(/no relayer.+gas price/is)
     });
   });
 
@@ -448,6 +449,60 @@ describe('GSNProvider', function () {
       await expect(
         this.greeter.methods.greet("Hello").send({ from: this.signer })
       ).to.be.rejectedWith(/no relay/i)
+    });
+  });
+
+  context('on relayer errors', function () {
+    beforeEach(async function () {
+      this.onPost = null;
+      sinon.stub(axios, 'create').returns({
+        post: () => this.onPost()
+      });
+
+      const gsnProvider = new GSNProvider(PROVIDER_URL, { ... HARDCODED_RELAYER_OPTS });
+      this.greeter.setProvider(gsnProvider);
+    });
+
+    afterEach(function () {
+      sinon.restore();
+    })
+
+    it('reports relayer not answering', async function () {
+      this.onPost = () => Promise.reject(new Error('connect ECONNREFUSED 127.0.0.1:8099'));
+      await expect(sendTx.call(this)).to.be.rejectedWith(/connect ECONNREFUSED/);
+    });
+
+    it('reports relayer server error', async function () {
+      this.onPost = () => Promise.reject(new Error('internal server error'));
+      await expect(sendTx.call(this)).to.be.rejectedWith(/internal server error/);
+    });
+
+    it('reports relayer not ready', async function () {
+      this.onPost = () => Promise.resolve({ data: { Ready: false } });
+      await expect(sendTx.call(this)).to.be.rejectedWith(/not ready/i);
+    });
+
+    it('reports relayer with gas price too high', async function() {
+      this.onPost = () => Promise.resolve({ data: { Ready: true, MinGasPrice: 50000000000 } });
+      await expect(sendTx.call(this)).to.be.rejectedWith(/gas price/i);
+    });    
+  });
+
+  context('on no relayers available', async function () {
+    it('reports all relayers filtered out', async function () {
+      const gsnProvider = new GSNProvider(PROVIDER_URL, { ... HARDCODED_RELAYER_OPTS, minStake: 100e18 });
+      this.greeter.setProvider(gsnProvider);
+      await expect(sendTx.call(this)).to.be.rejectedWith(/no relayers elligible after filtering/i);
+    });
+
+    it('reports no registered relayers', async function () {
+      const hub = await getRelayHub(this.web3).deploy().send({ from: this.deployer, gas: 6.5e6 });
+      await this.greeter.methods.setHub(hub.options.address).send({ from: this.sender });
+      
+      const gsnProvider = new GSNProvider(PROVIDER_URL, { ... HARDCODED_RELAYER_OPTS });
+      this.greeter.setProvider(gsnProvider);
+      await fundRecipient(this.web3, { recipient: this.greeter.options.address, relayHubAddress: hub.options.address });
+      await expect(sendTx.call(this)).to.be.rejectedWith(/no relayers registered/i);
     });
   });
 });
@@ -491,4 +546,8 @@ function createSignKey() {
     privateKey: wallet.privKey,
     address: ethUtil.toChecksumAddress(ethUtil.bufferToHex(wallet.getAddress()))
   };
+}
+
+function sendTx() {
+  return this.greeter.methods.greet(LONG_MESSAGE).send({ from: this.signer });
 }

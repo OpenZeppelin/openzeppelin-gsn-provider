@@ -14,6 +14,7 @@ class ActiveRelayPinger {
         this.relaysCount = filteredRelays.length
         this.gasPrice = gasPrice
         this.verbose = verbose
+        this.errors = [];
     }
 
     /**
@@ -34,8 +35,7 @@ class ActiveRelayPinger {
                     console.log("nextRelay: find fastest relay from: " + JSON.stringify(slice))
                 }
                 firstRelayToRespond = await this.raceToSuccess(
-                    slice
-                        .map(relay => this.getRelayAddressPing(relay.relayUrl, relay.transactionFee, this.gasPrice))
+                    slice.map(relay => this.getRelayAddressPing(relay.relayUrl, relay.transactionFee, this.gasPrice))
                 );
                 if (this.verbose){
                     console.log("race finished with a champion: " + firstRelayToRespond.relayUrl)
@@ -68,11 +68,19 @@ class ActiveRelayPinger {
         return new Promise(function (resolve, reject) {
             let callback = function (error, body) {
                 if (error) {
-                    reject(error);
+                    reject(`Error querying relayer ${relayUrl}: ${error.message || error.error || error.toString()}`);
                     return
                 }
-                if ( !body || !body.Ready || body.MinGasPrice > gasPrice ) {
-                    reject("Relay not ready or proposed gas price too low " + JSON.stringify(body))
+                if ( !body ) {
+                    reject(`Empty response from relayer ${relayUrl}`);
+                    return;
+                }
+                if ( !body.Ready ) {
+                    reject(`Relayer ${relayUrl} is not ready`);
+                    return
+                }
+                if ( body.MinGasPrice > gasPrice ) {
+                    reject(`Relayer ${relayUrl} requires a minimum gas price of ${body.MinGasPrice} which is over this transaction gas price (${gasPrice})`);
                     return
                 }
                 try {
@@ -104,6 +112,7 @@ class ActiveRelayPinger {
                         promise.then((res) => {
                             resolve(res)
                         }).catch(err => {
+                            this.errors.push(err);
                             if (++numRejected === promises.length) {
                                 reject("No response matched filter from any server: " + err);
                             }
@@ -237,10 +246,15 @@ class ServerHelper {
         }
 
         const origRelays = Object.values(activeRelays)
-        const filteredRelays = origRelays.filter(this.relayFilter).sort(this.compareRelayScores.bind(this));
+        if (origRelays.length === 0) {
+            throw new Error(`No relayers registered in the requested hub at ${this.relayHubInstance.options.address}`);
+        }
 
+        const filteredRelays = origRelays.filter(this.relayFilter).sort(this.compareRelayScores.bind(this));
         if (filteredRelays.length == 0) {
-            throw new Error("no valid relays. orig relays=" + JSON.stringify(origRelays))
+            throw new Error("No relayers elligible after filtering. Available relayers:\n" + origRelays.map(r => 
+                ` score=${r.score} txFee=${r.transactionFee} stake=${r.stake} unstakeDelay=${r.unstakeDelay} address=${r.address} url=${r.relayUrl}`
+            ));
         }
 
         if (this.verbose){

@@ -330,46 +330,55 @@ class RelayClient {
         for (; ;) {
             let activeRelay = await pinger.nextRelay();
             if (!activeRelay) {
-                let error = new Error("No relay responded! " + pinger.relaysCount + " attempted, " + pinger.pingedRelays + " pinged");
-                error.otherErrors = errors;
+                const subErrors = errors.concat(pinger.errors);
+                const error = new Error(`No relayer responded or accepted the transaction out of the ${pinger.pingedRelays} queried:\n${subErrors.map(err => ` ${err}`).join('\n')}`);
+                error.errors = subErrors;
                 throw error
             }
             let relayAddress = activeRelay.RelayServerAddress;
             let relayUrl = activeRelay.relayUrl;
             let txfee = parseInt(options.txfee || activeRelay.transactionFee);
 
-            let hash =
-                utils.getTransactionHash(
-                    options.from,
-                    options.to,
-                    encodedFunctionCall,
-                    txfee,
-                    gasPrice,
-                    gasLimit,
-                    nonce,
-                    relayHub._address,
-                    relayAddress);
+            let hash, signature;
+            try {
+                hash =
+                    utils.getTransactionHash(
+                        options.from,
+                        options.to,
+                        encodedFunctionCall,
+                        txfee,
+                        gasPrice,
+                        gasLimit,
+                        nonce,
+                        relayHub._address,
+                        relayAddress);
 
-            let signature;
-            if (typeof self.ephemeralKeypair === "object" && self.ephemeralKeypair !== null) {
-                signature = await getTransactionSignatureWithKey(self.ephemeralKeypair.privateKey, hash);
-            } else {
-                signature = await getTransactionSignature(this.web3, options.from, hash);
+                if (typeof self.ephemeralKeypair === "object" && self.ephemeralKeypair !== null) {
+                    signature = await getTransactionSignatureWithKey(self.ephemeralKeypair.privateKey, hash);
+                } else {
+                    signature = await getTransactionSignature(this.web3, options.from, hash);
+                }
+            } catch (err) {
+                throw new Error(`Error generating signature for transaction: ${err.message || err}`);
             }
 
             let approvalData = "0x";
-            if (typeof options.approveFunction === "function") {
-                approvalData = await options.approveFunction({
-                    from: options.from,
-                    to: options.to,
-                    encodedFunctionCall: encodedFunctionCall,
-                    txfee,
-                    gas_price: gasPrice,
-                    gas_limit: gasLimit,
-                    nonce: nonce,
-                    relay_hub_address: relayHub._address,
-                    relay_address: relayAddress
-                })
+            try {
+                if (typeof options.approveFunction === "function") {
+                    approvalData = await options.approveFunction({
+                        from: options.from,
+                        to: options.to,
+                        encodedFunctionCall: encodedFunctionCall,
+                        txfee,
+                        gas_price: gasPrice,
+                        gas_limit: gasLimit,
+                        nonce: nonce,
+                        relay_hub_address: relayHub._address,
+                        relay_address: relayAddress
+                    })
+                }
+            } catch (err) {
+                throw new Error(`Error running approveFunction for transaction: ${err.message || err}`);
             }
 
             if (self.config.verbose) {
@@ -407,7 +416,7 @@ class RelayClient {
                 );
                 return validTransaction
             } catch (error) {
-                errors.push(error);
+                errors.push(`Error sending transaction via relayer ${relayAddress}: ${error.message || error}`);
                 if (self.config.verbose) {
                     console.log("relayTransaction: req:", {
                         from: options.from,
