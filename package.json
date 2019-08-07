@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "test": "./scripts/test.sh",
-    "test-compile": "cd test && oz compile"
+    "compile-mocks": "cd test && oz compile"
   },
   "files": [
     "README.md",

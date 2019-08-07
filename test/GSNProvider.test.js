@@ -5,6 +5,7 @@ const ethUtil = require('ethereumjs-util');
 const { fundRecipient, relayHub, getRelayHub } = require('@openzeppelin/gsn-helpers');
 const { GSNProvider } = require('../src');
 const { abi: GreeterAbi, bytecode: GreeterBytecode } = require('./build/contracts/Greeter.json');
+const { abi: RejectfulGreeterAbi, bytecode: RejectfulGreeterBytecode } = require('./build/contracts/RejectfulGreeter.json');
 const { abi: VanillaGreeterAbi, bytecode: VanillaGreeterBytecode } = require('./build/contracts/VanillaGreeter.json');
 const sinon = require('sinon');
 const axios = require('axios');
@@ -499,11 +500,23 @@ describe('GSNProvider', function () {
       const hub = await getRelayHub(this.web3).deploy().send({ from: this.deployer, gas: 6.5e6 });
       await this.greeter.methods.setHub(hub.options.address).send({ from: this.sender });
       
-      const gsnProvider = new GSNProvider(PROVIDER_URL, { ... HARDCODED_RELAYER_OPTS });
+      const gsnProvider = new GSNProvider(PROVIDER_URL, HARDCODED_RELAYER_OPTS);
       this.greeter.setProvider(gsnProvider);
       await fundRecipient(this.web3, { recipient: this.greeter.options.address, relayHubAddress: hub.options.address });
+
       await expect(sendTx.call(this)).to.be.rejectedWith(/no relayers registered/i);
     });
+
+    it('throws if canRelay failed', async function () {      
+      const RejectfulGreeter = new this.web3.eth.Contract(RejectfulGreeterAbi, null, { data: RejectfulGreeterBytecode});
+      const greeter = await RejectfulGreeter.deploy().send({ from: this.deployer, gas: 3e6 });
+      const gsnProvider = new GSNProvider(PROVIDER_URL, HARDCODED_RELAYER_OPTS);
+      greeter.setProvider(gsnProvider);
+      await fundRecipient(this.web3, { recipient: greeter.options.address });
+      
+      await expect(sendTx.call(this, greeter)).to.be.rejectedWith(/no relayer.+canRelay check failed with error 20/is);
+    });
+
   });
 });
 
@@ -548,6 +561,6 @@ function createSignKey() {
   };
 }
 
-function sendTx() {
-  return this.greeter.methods.greet(LONG_MESSAGE).send({ from: this.signer });
+function sendTx(greeter=null) {
+  return (greeter || this.greeter).methods.greet(LONG_MESSAGE).send({ from: this.signer });
 }

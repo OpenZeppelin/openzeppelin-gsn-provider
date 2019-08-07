@@ -61,3 +61,19 @@ contract Greeter is IRelayRecipient, GSNContext, VanillaGreeter {
     _upgradeRelayHub(hub);
   }
 }
+
+contract RejectfulGreeter is Greeter {
+  function acceptRelayedCall(
+      address,
+      address,
+      bytes calldata,
+      uint256,
+      uint256,
+      uint256,
+      uint256,
+      bytes calldata,
+      uint256
+  ) external view returns (uint256, bytes memory) {
+    return (20, "");
+  }
+}

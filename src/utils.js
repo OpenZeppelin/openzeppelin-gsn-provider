@@ -24,8 +24,19 @@ function toInt(value) {
   return new BN(value).toNumber();
 }
 
+function preconditionCodeToDescription(code) {
+  switch (parseInt(code)) {
+    case 1: return "wrong signature";
+    case 2: return "wrong nonce";
+    case 3: return "recipient reverted in acceptRelayedCall";
+    case 4: return "invalid status code returned by the recipient";
+    default: return `error ${code}`;
+  }
+}
+
 module.exports = {
   appendAddress,
   callAsJsonRpc,
-  toInt
+  toInt,
+  preconditionCodeToDescription
 }

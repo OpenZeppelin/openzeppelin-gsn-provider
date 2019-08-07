@@ -12,7 +12,7 @@ const ethWallet = require('ethereumjs-wallet');
 const ethJsTx = require('ethereumjs-tx');
 const abi_decoder = require('abi-decoder');
 const BN = require('bignumber.js');
-const { appendAddress, toInt } = require('../utils');
+const { appendAddress, toInt, preconditionCodeToDescription } = require('../utils');
 
 const relayHubAbi = require('./IRelayHub');
 const relayRecipientAbi = require('./IRelayRecipient');
@@ -416,7 +416,13 @@ class RelayClient {
                 );
                 return validTransaction
             } catch (error) {
-                errors.push(`Error sending transaction via relayer ${relayAddress}: ${error.message || error}`);
+                const errMsg = (error.message || error)
+                    .toString()
+                    .replace(
+                        /canRelay\(\) view function returned error code=(\d+)\..+/, 
+                        (_match, code) => `canRelay check failed with ${preconditionCodeToDescription(code)}`
+                    )
+                errors.push(`Error sending transaction via relayer ${relayAddress}: ${errMsg}`);
                 if (self.config.verbose) {
                     console.log("relayTransaction: req:", {
                         from: options.from,
