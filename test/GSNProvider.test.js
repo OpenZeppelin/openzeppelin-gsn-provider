@@ -527,6 +527,9 @@ describe('GSNProvider', function () {
 
     beforeEach('creating provider', async function () {
       this.gsnProvider = new GSNProvider(PROVIDER_URL, HARDCODED_RELAYER_OPTS);
+
+      // it's necessary to send a transaction through the gsnProvider for the serverHelper
+      // to get hold of an instance of the relayHub
       this.greeter.setProvider(this.gsnProvider);
       await this.greeter.methods.greet("Hello").send({ from: this.sender, useGSN: true });
     });
