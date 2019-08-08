@@ -1,4 +1,5 @@
 const BN = require('web3').utils.toBN;
+const abi = require('web3-eth-abi');
 
 //relays are "down-scored" in case they timed out a request.
 // they are "forgiven" after this timeout.
@@ -193,6 +194,10 @@ class ServerHelper {
             this.filteredRelays = []
         }
         this.relayHubInstance = relayHubInstance
+        this.addedAndRemovedSignatures = 
+            this.relayHubInstance.options.jsonInterface.filter(e =>
+                e.name === 'RelayAdded' || e.name === 'RelayRemoved'
+            ).map(abi.encodeEventSignature);
     }
 
     async newActiveRelayPinger(fromBlock, gasPrice ) {
@@ -219,7 +224,7 @@ class ServerHelper {
         let activeRelays = {}
         let fromBlock = this.fromBlock || 2;
         let addedAndRemovedEvents = await this.relayHubInstance.getPastEvents("allEvents", { fromBlock: fromBlock,
-            // topics: [["RelayAdded", "RelayRemoved"]]
+            topics: [this.addedAndRemovedSignatures],
         })
 
         if (this.verbose){
