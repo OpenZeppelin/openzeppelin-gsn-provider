@@ -62,6 +62,28 @@ class RelayClient {
         this.serverHelper = this.config.serverHelper || new ServerHelper(this.httpSend, this.failedRelays, this.config);
     }
 
+    async sendTransaction(payload) {
+        const relayOptions = this.getTransactionOptions(payload);
+        const tx = await this.relayTransaction(payload.params[0].data, relayOptions);
+        return ethUtils.bufferToHex(tx.hash(true));
+    }
+
+    getTransactionOptions(payload) {
+        const params = payload.params[0]
+        const relayClientOptions = this.config;
+        let relayOptions = {
+            from: params.from,
+            to: params.to,
+            txfee: params.txFee || params.txfee || relayClientOptions.txFee || relayClientOptions.txfee,
+            gas_limit: params.gas && toInt(params.gas),
+            gas_price: params.gasPrice && toInt(params.gasPrice),
+            approveFunction: params.approveFunction || this.config.approveFunction
+        };
+        if (relayClientOptions.verbose)
+            console.log('RR: ', payload.id, relayOptions);
+        return relayOptions;
+    }
+
     createRelayRecipient(addr) {
         return new this.web3.eth.Contract(relayRecipientAbi, addr)
     }
@@ -463,37 +485,6 @@ class RelayClient {
         }
         return resp
     }
-
-    runRelay(payload, callback) {
-
-        let params = payload.params[0];
-        let relayClientOptions = this.config;
-
-        let relayOptions = {
-            from: params.from,
-            to: params.to,
-            txfee: params.txFee || params.txfee || relayClientOptions.txFee || relayClientOptions.txfee,
-            gas_limit: params.gas && toInt(params.gas),
-            gas_price: params.gasPrice && toInt(params.gasPrice),
-            approveFunction: params.approveFunction || this.config.approveFunction
-        };
-
-        if (relayClientOptions.verbose)
-            console.log('RR: ', payload.id, relayOptions);
-
-        this.relayTransaction(params.data, relayOptions)
-            .then(validTransaction => {
-
-                var hash = "0x" + validTransaction.hash(true).toString('hex');
-                callback(null, {jsonrpc: '2.0', id: payload.id, result: hash})
-            })
-            .catch(err => {
-                if (relayClientOptions.verbose)
-                    console.log("RR error: ", err);
-                callback(err, null)
-            })
-    }
-
 
     postAuditTransaction(signedTx, relayUrl) {
         var self = this;
