@@ -223,7 +223,8 @@ class ServerHelper {
     async fetchRelaysAdded() {
         let activeRelays = {}
         let fromBlock = this.fromBlock || 2;
-        let addedAndRemovedEvents = await this.relayHubInstance.getPastEvents("allEvents", { fromBlock: fromBlock,
+        let addedAndRemovedEvents = await this.relayHubInstance.getPastEvents("allEvents", {
+            fromBlock: fromBlock,
             topics: [this.addedAndRemovedSignatures],
         })
 
