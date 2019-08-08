@@ -1,7 +1,7 @@
 const Web3 = require('web3');
 const RelayClient = require('./tabookey-gasless/RelayClient');
 const PrivateKeyProvider = require('./PrivateKeyProvider');
-const { callAsJsonRpc } = require('./utils');
+const { callAsJsonRpc, fixTransactionReceiptResponse } = require('./utils');
 
 class GSNProvider {
   constructor(base, options = {}) {
@@ -48,7 +48,7 @@ class GSNProvider {
     // Set error status if tx was rejected
     this.baseSend(payload, (err, receipt) => {
       if (err) callback(err, null);
-      else callback(null, this.relayClient.fixTransactionReceiptResp(receipt));
+      else callback(null, fixTransactionReceiptResponse(receipt, this.options.verbose));
     });
 
     return true;

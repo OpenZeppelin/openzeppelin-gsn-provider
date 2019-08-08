@@ -28,12 +28,12 @@ function handlesSubscriptions(createProviderFn) {
     });
 
     it('subscribes to events with gsn ws provider', async function () {
-      const gsnProvider = await createProviderFn(PROVIDER_URL.replace(/^http/, 'ws'), HARDCODED_RELAYER_OPTS);
+      const gsnProvider = await createProviderFn.call(this, PROVIDER_URL.replace(/^http/, 'ws'), HARDCODED_RELAYER_OPTS);
       await testSubscription.call(this, gsnProvider);
     });
 
     it('subscribes to events with gsn ws provider with sign key', async function () {
-      const gsnProvider = await createProviderFn(PROVIDER_URL.replace(/^http/, 'ws'), {
+      const gsnProvider = await createProviderFn.call(this, PROVIDER_URL.replace(/^http/, 'ws'), {
         ... HARDCODED_RELAYER_OPTS,
         signKey: createSignKey()
       });

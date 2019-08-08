@@ -6,6 +6,7 @@ const { abi: GreeterAbi, bytecode: GreeterBytecode } = require('./build/contract
 const { abi: RejectfulGreeterAbi, bytecode: RejectfulGreeterBytecode } = require('./build/contracts/RejectfulGreeter.json');
 const { abi: VanillaGreeterAbi, bytecode: VanillaGreeterBytecode } = require('./build/contracts/VanillaGreeter.json');
 const { sendTx, createSignKey, HARDCODED_RELAYER_OPTS } = require('./utils');
+const { setupAccounts, deployGreeter } = require('./setup');
 const sendsTransactions = require('./behaviours/sendsTransactions');
 const handlesSubscriptions = require('./behaviours/handlesSubscriptions');
 const handlesErrors = require('./behaviours/handlesErrors');
@@ -20,22 +21,11 @@ const PROVIDER_URL = process.env.PROVIDER_URL || 'http://localhost:9545';
 
 describe('GSNProvider', function () {
   before('setting up web3', async function () {
-    this.web3 = new Web3(PROVIDER_URL);
-    this.accounts = await this.web3.eth.getAccounts();
-    expect(this.accounts).to.have.lengthOf(10);
-
-    this.deployer = this.accounts[0];
-    this.sender = this.accounts[1];
-    this.signer = this.accounts[2];
-    this.secondRelay = this.accounts[6];
-    this.failsPre = this.accounts[7];
-    this.failsPost = this.accounts[8];
+    await setupAccounts.call(this);
   });
 
   beforeEach('setting up sample contract', async function () {
-    const Greeter = new this.web3.eth.Contract(GreeterAbi, null, { data: GreeterBytecode});
-    this.greeter = await Greeter.deploy().send({ from: this.deployer, gas: 2e6 });
-    await fundRecipient(this.web3, { recipient: this.greeter.options.address });
+    await deployGreeter.call(this);
   });
 
   const createProvider = (url, opts) => new GSNProvider(url, opts);
@@ -131,6 +121,7 @@ describe('GSNProvider', function () {
 
     context('with a second relay added', async function () {
       beforeEach('adding second relay', async function () {
+        this.secondRelay = this.accounts[6];
         await this.relayHub.methods.stake(this.secondRelay, 60*60*24*10 /* 10 days */)
           .send({
             value: Web3.utils.toWei('1', 'ether'),

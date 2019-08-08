@@ -14,7 +14,7 @@ const expect = require('chai')
 function handlesErrors(createProviderFn) {
   context('on gsn errors', function () {
     beforeEach(async function () {
-      const gsnProvider = await createProviderFn(PROVIDER_URL, { ...HARDCODED_RELAYER_OPTS });
+      const gsnProvider = await createProviderFn.call(this, PROVIDER_URL, { ...HARDCODED_RELAYER_OPTS });
       this.greeter.setProvider(gsnProvider);
     });
 
@@ -45,7 +45,7 @@ function handlesErrors(createProviderFn) {
 
   context('on gsn errors with gsn disabled by default', function () {
     beforeEach(async function () {
-      const gsnProvider = await createProviderFn(PROVIDER_URL, { ...HARDCODED_RELAYER_OPTS, useGSN: false });
+      const gsnProvider = await createProviderFn.call(this, PROVIDER_URL, { ...HARDCODED_RELAYER_OPTS, useGSN: false });
       this.greeter.setProvider(gsnProvider);
     });
 
@@ -64,7 +64,7 @@ function handlesErrors(createProviderFn) {
 
   context('on illegal gsn actions', function () {
     beforeEach(async function () {
-      const gsnProvider = await createProviderFn(PROVIDER_URL, { ...HARDCODED_RELAYER_OPTS });
+      const gsnProvider = await createProviderFn.call(this, PROVIDER_URL, { ...HARDCODED_RELAYER_OPTS });
       this.greeter.setProvider(gsnProvider);
       this.web3gsn = new Web3(gsnProvider);
     });
@@ -104,7 +104,7 @@ function handlesErrors(createProviderFn) {
 
   context('on invalid hub', async function () {
     beforeEach(async function () {
-      this.gsnProvider = await createProviderFn(PROVIDER_URL, { ...HARDCODED_RELAYER_OPTS });
+      this.gsnProvider = await createProviderFn.call(this, PROVIDER_URL, { ...HARDCODED_RELAYER_OPTS });
     });
 
     it('throws if hub is the zero address', async function () {
@@ -137,7 +137,7 @@ function handlesErrors(createProviderFn) {
 
   context('on invalid recipient', async function () {
     beforeEach(async function () {
-      this.gsnProvider = await createProviderFn(PROVIDER_URL, { ...HARDCODED_RELAYER_OPTS });
+      this.gsnProvider = await createProviderFn.call(this, PROVIDER_URL, { ...HARDCODED_RELAYER_OPTS });
     });
 
     it('throws if recipient does not respond hub addr', async function () {
