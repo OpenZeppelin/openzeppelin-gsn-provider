@@ -133,6 +133,7 @@ const gsnDevProvider = new GSNDevProvider('http://localhost:8545', {
 });
 ```
 
+Note that this provider is meant only for development usage, since it requires a funded account to relay the transactions sent through it. This defeats the very purpose of GSN, that is to allow users without accounts or funds to send transactions. The aim of this provider is to support in testing GSN setups, and test the `acceptRelayedCall`, `preRelayedCall`, and `postRelayedCall` methods of your contracts.
 
 ## Configuration
 
