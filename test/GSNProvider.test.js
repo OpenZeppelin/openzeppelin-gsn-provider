@@ -37,6 +37,7 @@ describe('GSNProvider', function () {
     this.deployer = this.accounts[0];
     this.sender = this.accounts[1];
     this.signer = this.accounts[2];
+    this.secondRelay = this.accounts[6];
     this.failsPre = this.accounts[7];
     this.failsPost = this.accounts[8];
   });
@@ -517,6 +518,62 @@ describe('GSNProvider', function () {
       await expect(sendTx.call(this, greeter)).to.be.rejectedWith(/no relayer.+canRelay check failed with error 20/is);
     });
 
+  });
+
+  context('detecting relays added', function () {
+    before('getting relayHub', async function () {
+      this.relayHub = await getRelayHub(this.web3);
+    });
+
+    beforeEach('creating provider', async function () {
+      this.gsnProvider = new GSNProvider(PROVIDER_URL, HARDCODED_RELAYER_OPTS);
+
+      // it's necessary to send a transaction through the gsnProvider for the serverHelper
+      // to get hold of an instance of the relayHub
+      this.greeter.setProvider(this.gsnProvider);
+      await this.greeter.methods.greet("Hello").send({ from: this.sender, useGSN: true });
+    });
+
+    it('finds the one relay added', async function () {
+      const relays = await this.gsnProvider.relayClient.serverHelper.fetchRelaysAdded();
+      expect(relays).to.have.lengthOf(1);
+    });
+
+    context('with a second relay added', async function () {
+      beforeEach('adding second relay', async function () {
+        await this.relayHub.methods.stake(this.secondRelay, 60*60*24*10 /* 10 days */)
+          .send({
+            value: Web3.utils.toWei('1', 'ether'),
+            from: this.deployer,
+            useGSN: false,
+          });
+        await this.relayHub.methods.registerRelay(0, 'url')
+          .send({
+            from: this.secondRelay,
+            useGSN: false,
+          });
+      });
+
+      it('finds the two relays', async function () {
+        const relays = await this.gsnProvider.relayClient.serverHelper.fetchRelaysAdded();
+        expect(relays).to.have.lengthOf(2);
+      });
+
+      context('with the second relay removed', async function () {
+        beforeEach('removing second relay', async function () {
+          await this.relayHub.methods.removeRelayByOwner(this.secondRelay)
+            .send({
+              from: this.deployer,
+              useGSN: false,
+            });
+        });
+
+        it('finds only one relay', async function () {
+          const relays = await this.gsnProvider.relayClient.serverHelper.fetchRelaysAdded();
+          expect(relays).to.have.lengthOf(1);
+        });
+      });
+    });
   });
 });
 
