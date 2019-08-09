@@ -37,7 +37,7 @@
     "web3-utils": "^1.2.1"
   },
   "devDependencies": {
-    "@openzeppelin/gsn-helpers": "^0.1.4",
+    "@openzeppelin/gsn-helpers": "^0.1.5",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chai-string": "^1.5.0",

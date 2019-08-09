@@ -7,14 +7,14 @@ set -eo pipefail
 trap cleanup EXIT
 
 cleanup() {
+  # Kill the GSN relay server that we started (if we started one and if it's still running).
+  if [ -n "$gsn_relay_server_pid" ] && ps -p $gsn_relay_server_pid > /dev/null; then
+    kill $gsn_relay_server_pid
+  fi
+
   # Kill the ganache instance that we started (if we started one and if it's still running).
   if [ -n "$ganache_pid" ] && ps -p $ganache_pid > /dev/null; then
     kill -9 $ganache_pid
-  fi
-
-  # Kill the GSN relay server that we started (if we started one and if it's still running).
-  if [ -n "$gsn_relay_server_pid" ] && ps -p $gsn_relay_server_pid > /dev/null; then
-    kill -9 $gsn_relay_server_pid
   fi
 }
 
@@ -46,20 +46,10 @@ start_ganache() {
 }
 
 setup_gsn_relay() {
-  relay_hub_addr=$(node ./node_modules/@openzeppelin/gsn-helpers/oz-gsn.js deploy-relay-hub --ethereumNodeURL $ganache_url) # Replace this with npx once the package is out
-
-  echo "Launching GSN relay server to hub $relay_hub_addr"
-
-  ./bin/gsn-relay -DevMode -RelayHubAddress $relay_hub_addr -GasPricePercent 0 -EthereumNodeUrl $ganache_url -Url $relayer_url &> /dev/null &
-  gsn_relay_server_pid=$!
-
-  while ! relayer_running; do
-    sleep 0.1 # wait for 1/10 of the second before check again
-  done
-
+  echo "Launching GSN relay server"
+  gsn_relay_server_pid=$(npx oz-gsn run-relayer --ethereumNodeURL $ganache_url --port $relayer_port --detach --quiet)
+  
   echo "GSN relay server launched!"
-
-  node ./node_modules/@openzeppelin/gsn-helpers/oz-gsn.js register-relayer --ethereumNodeURL $ganache_url --relayUrl $relayer_url # Replace this with npx once the package is out
 }
 
 # Main
