@@ -92,6 +92,21 @@ existingWeb3.setProvider(gsnProvider);
 existingContract.setProvider(gsnProvider);
 ```
 
+## Development provider
+
+In addition to the `GSNProvider`, this package includes a `GSNDevProvider`. This provider is meant to be used in development and testing environments only, and it acts as both a provider and a relayer in itself. Any transactions sent through it will be signed by the sender, and relayed by another address. It will register itself in the relay hub as `http://gsn-dev-relayer.openzeppelin.com/`. Note that this provider still needs a hub to exist on the network.
+
+It requires two addresses with funds: one to act as the relayer, and one to act as its owner, who will register it on the hub.
+
+```js
+const { GSNDevProvider } = require('@openzeppelin/gsn-provider');
+const gsnDevProvider = new GSNDevProvider('http://localhost:8545', {
+  ownerAddress: accounts[0],
+  relayerAddress: accounts[1],
+});
+```
+
+
 ## Configuration
 
 Available options for the `GSNProvider`:
@@ -99,7 +114,6 @@ Available options for the `GSNProvider`:
 * `useGSN (bool)`: whether to send meta txs by default, or a function that receives a payload and returns whether to use a meta tx (defaults to true).
 * `signKey (hex string)`: optional private key to sign the meta txs, using the underlying provider `sign` if not set.
 * `approveFunction (function)`: optional function for generating application approval data for a transaction, and returns a `byte32` signature that can be checked in the recipient.
-* `gasPriceFactorPercent (integer)`: percentage increase over the network gas price for gsn transactions (defaults to 20, note that you need to clear web3 default fixed gasprice for this setting to go into effect).
 * `fixedGasPrice (integer|string)`: fixed gas price to use in all gsn transactions.
 * `fixedGasLimit (integer|string)`: fixed gas limit to use in all gsn transactions.
 * `minStake (integer)`: filters out relays with stake below this value (optional)
@@ -108,6 +122,7 @@ Available options for the `GSNProvider`:
 
 Advanced options for the provider (most likely you will not need these ones):
 
+* `gasPriceFactorPercent (integer)`: percentage increase over the network gas price for gsn transactions (defaults to 20, note that you need to clear web3 default fixed gasprice for this setting to go into effect).
 * `httpTimeout (integer)`: timeout in ms for HTTP requests to relayers (defaults to 10000).
 * `allowedRelayNonceGap (integer)`: (defaults to 3)
 * `relayTimeoutGrace (integer)`: whenever a relayer timeouts a request, it is downscored by the client, and this penalization is reset every `relayTimeoutGrace` seconds (defaults to 1800, 30 mins)

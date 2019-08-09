@@ -1,7 +1,7 @@
 const Web3 = require('web3');
 const RelayClient = require('./tabookey-gasless/RelayClient');
 const PrivateKeyProvider = require('./PrivateKeyProvider');
-const { callAsJsonRpc } = require('./utils');
+const { callAsJsonRpc, fixTransactionReceiptResponse } = require('./utils');
 
 class GSNProvider {
   constructor(base, options = {}) {
@@ -22,59 +22,68 @@ class GSNProvider {
   }
 
   send(payload, callback) {
-    let txParams;
-
     switch (payload.method) {
-      case 'eth_sendTransaction':        
-        // Check for GSN usage
-        txParams = payload.params[0];
-        if (!this._withGSN(payload, txParams)) break;
-        
-        // Use sign key address if set
-        if (!txParams.from && this.base.address) txParams.from = this.base.address;
-        
-        // TODO: move validations to the relay client
-        if (!txParams.to) {
-          return callback(new Error("Cannot deploy a new contract via the GSN"), null);
-        }
-        if (txParams.value) {
-          const strValue = txParams.value.toString();
-          if (strValue !== '0' && strValue !== '0x0') {
-            return callback(new Error("Cannot send funds via the GSN"), null);
-          }
-        }
-
-        // Delegate to relay client
-        this.relayClient.runRelay(payload, (err, response) => {
-          if (err) {
-            callback(err, null);
-          } else {
-            this.relayedTxs.add(response.result);
-            callback(null, response);
-          }
-        });
-
-        return;
+      case 'eth_sendTransaction':     
+        if (this._handleSendTransaction(payload, callback)) return;   
+        break; 
 
       case 'eth_estimateGas':
         if (this._handleEstimateGas(payload, callback)) return;
-        
+        break;
+
       case 'eth_getTransactionReceipt':
-        // Check for GSN usage
-        const txHash = payload.params[0];
-        if (!this._withGSN(payload) && !this.relayedTxs.has(txHash)) break;
-
-        // Set error status if tx was rejected
-        this.baseSend(payload, (err, receipt) => {
-          if (err) callback(err, null);
-          else callback(null, this.relayClient.fixTransactionReceiptResp(receipt));
-        });
-
-        return;
+        if (this._handleGetTransactionReceipt(payload,callback)) return;
+        break;
     }
 
     // Default by sending to base provider
     return this.baseSend(payload, callback);
+  }
+
+  _handleGetTransactionReceipt(payload, callback) {
+    // Check for GSN usage
+    const txHash = payload.params[0];
+    if (!this._withGSN(payload) && !this.relayedTxs.has(txHash)) return false;
+
+    // Set error status if tx was rejected
+    this.baseSend(payload, (err, receipt) => {
+      if (err) callback(err, null);
+      else callback(null, fixTransactionReceiptResponse(receipt, this.options.verbose));
+    });
+
+    return true;
+  }
+
+  _handleSendTransaction(payload, callback) {
+    // Check for GSN usage
+    const txParams = payload.params[0];
+    if (!this._withGSN(payload, txParams)) return false;
+    
+    // Use sign key address if set
+    if (!txParams.from && this.base.address) txParams.from = this.base.address;
+    
+    // TODO: move validations to the relay client
+    if (!txParams.to) {
+      return callback(new Error("Cannot deploy a new contract via the GSN"), null);
+    }
+    if (txParams.value) {
+      const strValue = txParams.value.toString();
+      if (strValue !== '0' && strValue !== '0x0') {
+        return callback(new Error("Cannot send funds via the GSN"), null);
+      }
+    }
+
+    // Delegate to relay client
+    callAsJsonRpc(
+      this.relayClient.sendTransaction.bind(this.relayClient), [payload],
+      payload.id, callback,
+      txHash => {
+        this.relayedTxs.add(txHash);
+        return { result: txHash };
+      }
+    );
+
+    return true;
   }
 
   _handleEstimateGas(payload, callback) {

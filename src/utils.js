@@ -1,6 +1,10 @@
 const ethUtils = require('ethereumjs-util');
 const BN = require('bignumber.js');
 
+const abiDecoder = require('abi-decoder');
+const relayHubAbi = require('./tabookey-gasless/IRelayHub');
+abiDecoder.addABI(relayHubAbi);
+
 function appendAddress(data, address) {
   return data + ethUtils.setLengthLeft(ethUtils.toBuffer(address), 32).toString('hex');
 }
@@ -34,9 +38,34 @@ function preconditionCodeToDescription(code) {
   }
 }
 
+function fixTransactionReceiptResponse(resp, debug=false) {
+  if (!resp || !resp.result || !resp.result.logs) return resp;
+  
+  const logs = abiDecoder.decodeLogs(resp.result.logs);
+  const canRelayFailed = logs.find(e => e && e.name == 'CanRelayFailed');
+  const transactionRelayed = logs.find(e => e && e.name == 'TransactionRelayed');
+
+  const setErrorStatus = (reason) => {
+    if (debug) console.log(`Setting tx receipt status to zero while fetching tx receipt (${reason})`);
+    resp.result.status = 0;
+  }
+
+  if (canRelayFailed) {
+    setErrorStatus(`canRelay failed with ${canRelayFailed.find(e => e.name == "reason").value}`);
+  } else if (transactionRelayed) {
+    const status = transactionRelayed.events.find(e => e.name == "status").value;
+    if (parseInt(status) !== 0) { // 0 signifies success
+      setErrorStatus(`reverted relayed transaction with status code ${status}`);
+    }
+  }
+  
+  return resp
+}
+
 module.exports = {
   appendAddress,
   callAsJsonRpc,
   toInt,
-  preconditionCodeToDescription
+  preconditionCodeToDescription,
+  fixTransactionReceiptResponse
 }
