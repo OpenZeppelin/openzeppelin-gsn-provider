@@ -12,7 +12,7 @@ const ethWallet = require('ethereumjs-wallet');
 const ethJsTx = require('ethereumjs-tx');
 const abi_decoder = require('abi-decoder');
 const BN = require('bignumber.js');
-const { appendAddress, toInt, preconditionCodeToDescription } = require('../utils');
+const { appendAddress, toInt, preconditionCodeToDescription, getApprovalData } = require('../utils');
 
 const relayHubAbi = require('./IRelayHub');
 const relayRecipientAbi = require('./IRelayRecipient');
@@ -384,24 +384,17 @@ class RelayClient {
                 throw new Error(`Error generating signature for transaction: ${err.message || err}`);
             }
 
-            let approvalData = "0x";
-            try {
-                if (typeof options.approveFunction === "function") {
-                    approvalData = await options.approveFunction({
-                        from: options.from,
-                        to: options.to,
-                        encodedFunctionCall: encodedFunctionCall,
-                        txfee,
-                        gas_price: gasPrice,
-                        gas_limit: gasLimit,
-                        nonce: nonce,
-                        relay_hub_address: relayHub._address,
-                        relay_address: relayAddress
-                    })
-                }
-            } catch (err) {
-                throw new Error(`Error running approveFunction for transaction: ${err.message || err}`);
-            }
+            const approvalData = await getApprovalData(options.approveFunction, {
+                from: options.from,
+                to: options.to,
+                encodedFunctionCall,
+                txFee: txfee,
+                gasPrice,
+                gas: gasLimit,
+                nonce,
+                relayHubAddress: relayHub._address,
+                relayerAddress: relayAddress
+            });
 
             if (self.config.verbose) {
                 console.log("relayTransaction hash: ", hash, "from: ", options.from, "sig: ", signature);

@@ -1,12 +1,14 @@
 const Web3 = require('web3');
 const { createSignKey, assertGreetedEvent, assertSentViaGSN, assertNotSentViaGSN, LONG_MESSAGE, HARDCODED_RELAYER_OPTS } = require('../utils');
-const ethUtil = require('ethereumjs-util');
+const { toInt } = require('../../src/utils');
 const { omit } = require('lodash');
+const { relayHub } = require('@openzeppelin/gsn-helpers');
 
 const PROVIDER_URL = process.env.PROVIDER_URL || 'http://localhost:9545';
 
 const expect = require('chai')
   .use(require('chai-as-promised'))
+  .use(require('chai-string'))
   .expect;
 
 function sendsTransactions(createProviderFn) {
@@ -139,6 +141,62 @@ function sendsTransactions(createProviderFn) {
       assertGreetedEvent(receipt, LONG_MESSAGE);
       await assertNotSentViaGSN(this.web3, receipt.transactionHash);
     });
+  });
+
+  context('with approval data', function () {
+    const APPROVAL_DATA = '0x1234567890';
+
+    function validateApproveFunctionParams(params) {
+      expect(params).to.exist;
+      expect(params.from).to.equalIgnoreCase(this.signer);
+      expect(params.to).to.equalIgnoreCase(this.greeter.options.address);
+      expect(params.encodedFunctionCall).to.eq(this.greeter.methods.greet("Hello").encodeABI());
+      expect(toInt(params.txFee)).to.eq(HARDCODED_RELAYER_OPTS.txFee);
+      expect(toInt(params.gasPrice)).to.eq(HARDCODED_RELAYER_OPTS.fixedGasPrice);
+      expect(toInt(params.gas)).to.eq(HARDCODED_RELAYER_OPTS.fixedGasLimit);
+      expect(toInt(params.nonce)).to.be.gte(0);
+      expect(params.relayerAddress).to.exist;
+      expect(params.relayHubAddress).to.be.equalIgnoreCase(relayHub.address);
+    }
+
+    function assertPostGreetEvent(txReceipt) {
+      const event = txReceipt.events.PostGreet;
+      expect(event).to.exist;
+      expect(event.returnValues.from).to.eq(this.signer);
+      expect(event.returnValues.approveData).to.eq(APPROVAL_DATA);
+    }
+
+    beforeEach(async function () {
+      const approveFunction = (params) => {
+        this.approveFunctionParams = params;
+        return APPROVAL_DATA;
+      }
+      const gsnProvider = await createProviderFn.call(this, PROVIDER_URL, {
+        ...HARDCODED_RELAYER_OPTS,
+        approveFunction
+      });
+      
+      this.greeter.setProvider(gsnProvider);
+    });
+
+    it('calls approval data function from provider', async function () {
+      const tx = await this.greeter.methods.greet("Hello").send({ from: this.signer });
+      const params = this.approveFunctionParams;
+      validateApproveFunctionParams.call(this, params);
+      assertPostGreetEvent.call(this, tx);
+    })
+
+    it('calls approval data function from tx', async function () {
+      let approveFunctionParams;
+      const approveFunction = (params) => {
+        approveFunctionParams = params;
+        return APPROVAL_DATA;
+      }
+      const tx = await this.greeter.methods.greet("Hello").send({ from: this.signer, approveFunction });
+      const params = approveFunctionParams;
+      validateApproveFunctionParams.call(this, params);
+      assertPostGreetEvent.call(this, tx);
+    })
   });
 }
 

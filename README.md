@@ -92,6 +92,32 @@ existingWeb3.setProvider(gsnProvider);
 existingContract.setProvider(gsnProvider);
 ```
 
+You can also use the `setGSN` and `withGSN` shorthands:
+
+```js
+const { web3: gsnWeb3 } = require('@openzeppelin/gsn-provider');
+gsnWeb3.setGSN(existingWeb3); // modifies existingWeb3
+gsnWeb3.withGSN(existingWeb3); // returns a new web3 instance
+```
+
+### Injecting approval data
+
+The GSN protocol allows you to supply an arbitrary `approveData` blob, that can be checked on the recipient contract. This allows to implement off-chain approvals that are verified on-chain: for instance, you could have your users go through a captcha, and only then sign an approval for a transaction on your backend.
+
+To support this, the `GSNProvider` accepts an `approveFunction` parameter (both at construction time and on each transaction) that receives all transaction parameters, and should return the approval data.
+
+```js
+const { utils, GSNProvider } = require('@openzeppelin/gsn-provider');
+
+const approveFunction = async ({ from, to, encodedFunctionCall, txFee, gasPrice, gas, nonce, relayerAddress, relayHubAddress }) => {
+  const hash = web3.utils.soliditySha3(from, to, encodedFunctionCall, txFee, gasPrice, gas, nonce, relayerAddress, relayHubAddress);
+  const signature = await web3.eth.sign(hash, signer);
+  return utils.fixSignature(signature); // this takes care of removing signature malleability attacks
+};
+
+const gsnProvider = new GSNProvider('http://localhost:8545', { approveFunction });
+```
+
 ## Development provider
 
 In addition to the `GSNProvider`, this package includes a `GSNDevProvider`. This provider is meant to be used in development and testing environments only, and it acts as both a provider and a relayer in itself. Any transactions sent through it will be signed by the sender, and relayed by another address. It will register itself in the relay hub as `http://gsn-dev-relayer.openzeppelin.com/`. Note that this provider still needs a hub to exist on the network.
@@ -113,7 +139,7 @@ Available options for the `GSNProvider`:
 
 * `useGSN (bool)`: whether to send meta txs by default, or a function that receives a payload and returns whether to use a meta tx (defaults to true).
 * `signKey (hex string)`: optional private key to sign the meta txs, using the underlying provider `sign` if not set.
-* `approveFunction (function)`: optional function for generating application approval data for a transaction, and returns a `byte32` signature that can be checked in the recipient.
+* `approveFunction (function)`: optional function for generating application approval data for a transaction, and returns a `bytes` approval data (such as a signature) that can be checked in the recipient; receives as a parameter a single object with the properties `from`, `to`, `encodedFunctionCall`, `txFee`, `gasPrice`, `gas`, `nonce`, `relayerAddress`, `relayHubAddress`.
 * `fixedGasPrice (integer|string)`: fixed gas price to use in all gsn transactions.
 * `fixedGasLimit (integer|string)`: fixed gas limit to use in all gsn transactions.
 * `minStake (integer)`: filters out relays with stake below this value (optional)
