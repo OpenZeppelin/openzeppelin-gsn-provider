@@ -1,7 +1,7 @@
 # OpenZeppelin GSN Web3 Provider
 
 [![CircleCI](https://circleci.com/gh/OpenZeppelin/openzeppelin-gsn-provider.svg?style=svg)](https://circleci.com/gh/OpenZeppelin/openzeppelin-gsn-provider)
-![npm (scoped)](https://img.shields.io/npm/v/@openzeppelin/gsn-provider)
+[![npm (scoped)](https://img.shields.io/npm/v/@openzeppelin/gsn-provider)](https://www.npmjs.com/package/@openzeppelin/gsn-provider)
 
 **This is a web3.js compatible provider for sending transactions via the Gas Station Network (GSN)**. This package wraps a modified version of the [`RelayClient`](https://github.com/tabookey/tabookey-gasless/blob/master/src/js/relayclient/RelayClient.js) from `tabookey-gasless` with a custom web3 Provider. 
 
