@@ -10,6 +10,7 @@ const { setupAccounts, deployGreeter } = require('./setup');
 const sendsTransactions = require('./behaviours/sendsTransactions');
 const handlesSubscriptions = require('./behaviours/handlesSubscriptions');
 const handlesErrors = require('./behaviours/handlesErrors');
+const managesFees = require('./behaviours/managesFees');
 const sinon = require('sinon');
 const axios = require('axios');
 
@@ -31,6 +32,7 @@ describe('GSNProvider', function () {
   const createProvider = (url, opts) => new GSNProvider(url, opts);
 
   sendsTransactions(createProvider);
+  managesFees(createProvider);
   handlesSubscriptions(createProvider);
   handlesErrors(createProvider);
 
@@ -101,6 +103,10 @@ describe('GSNProvider', function () {
   });
 
   context('detecting relays added', function () {
+    const withoutGsnDev = (relayers) => (
+      relayers.filter(r => r.relayUrl !== "http://gsn-dev-relayer.openzeppelin.com/")
+    );
+
     before('getting relayHub', async function () {
       this.relayHub = await getRelayHub(this.web3);
     });
@@ -116,7 +122,7 @@ describe('GSNProvider', function () {
 
     it('finds the one relay added', async function () {
       const relays = await this.gsnProvider.relayClient.serverHelper.fetchRelaysAdded();
-      expect(relays).to.have.lengthOf(1);
+      expect(withoutGsnDev(relays)).to.have.lengthOf(1);
     });
 
     context('with a second relay added', async function () {
@@ -137,7 +143,7 @@ describe('GSNProvider', function () {
 
       it('finds the two relays', async function () {
         const relays = await this.gsnProvider.relayClient.serverHelper.fetchRelaysAdded();
-        expect(relays).to.have.lengthOf(2);
+        expect(withoutGsnDev(relays)).to.have.lengthOf(2);
       });
 
       context('with the second relay removed', async function () {
@@ -151,7 +157,7 @@ describe('GSNProvider', function () {
 
         it('finds only one relay', async function () {
           const relays = await this.gsnProvider.relayClient.serverHelper.fetchRelaysAdded();
-          expect(relays).to.have.lengthOf(1);
+          expect(withoutGsnDev(relays)).to.have.lengthOf(1);
         });
       });
     });

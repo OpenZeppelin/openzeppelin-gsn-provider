@@ -166,7 +166,7 @@ class DevRelayClient {
 
   async register(hub) {
     await this.ensureStake(hub);
-    await hub.methods.registerRelay(this.txFee.toString(), "http://example.com/").send({ from: this.relayerAddress });
+    await hub.methods.registerRelay(this.txFee.toString(), "http://gsn-dev-relayer.openzeppelin.com/").send({ from: this.relayerAddress });
     if (this.debug) console.log(`Registered relayer with address ${this.relayerAddress}`);
   }
 
