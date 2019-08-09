@@ -92,6 +92,21 @@ existingWeb3.setProvider(gsnProvider);
 existingContract.setProvider(gsnProvider);
 ```
 
+## Development provider
+
+In addition to the `GSNProvider`, this package includes a `GSNDevProvider`. This provider is meant to be used in development and testing environments only, and it acts as both a provider and a relayer in itself. Any transactions sent through it will be signed by the sender, and relayed by another address. It will register itself in the relay hub as `http://gsn-dev-relayer.openzeppelin.com/`. Note that this provider still needs a hub to exist on the network.
+
+It requires two addresses with funds: one to act as the relayer, and one to act as its owner, who will register it on the hub.
+
+```js
+const { GSNDevProvider } = require('@openzeppelin/gsn-provider');
+const gsnDevProvider = new GSNDevProvider('http://localhost:8545', {
+  ownerAddress: accounts[0],
+  relayerAddress: accounts[1],
+});
+```
+
+
 ## Configuration
 
 Available options for the `GSNProvider`:
