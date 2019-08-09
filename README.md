@@ -106,6 +106,12 @@ const gsnDevProvider = new GSNDevProvider('http://localhost:8545', {
 });
 ```
 
+If you are working with a local ganache on port `8545`, you can just use `GSNDevProvider.default()` which will set up a `GSNDevProvider` at `localhost:8545` using the first account as owner and the second as relayer (as in the example above).
+
+```js
+const { GSNDevProvider } = require('@openzeppelin/gsn-provider');
+const gsnDevProvider = await GSNDevProvider.default();
+```
 
 ## Configuration
 
