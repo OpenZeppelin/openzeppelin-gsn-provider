@@ -1,7 +1,7 @@
 const ethUtils = require('ethereumjs-util');
 const BN = require('bignumber.js');
 
-const abiDecoder = require('abi-decoder');
+const abiDecoder = require('./abi-decoder');
 const relayHubAbi = require('./tabookey-gasless/IRelayHub');
 abiDecoder.addABI(relayHubAbi);
 

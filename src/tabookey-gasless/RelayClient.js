@@ -10,7 +10,7 @@ const HttpWrapper = require('./HttpWrapper');
 const ethUtils = require('ethereumjs-util');
 const ethWallet = require('ethereumjs-wallet');
 const ethJsTx = require('ethereumjs-tx');
-const abi_decoder = require('abi-decoder');
+const abi_decoder = require('../abi-decoder');
 const BN = require('bignumber.js');
 const { appendAddress, toInt, preconditionCodeToDescription, getApprovalData } = require('../utils');
 
