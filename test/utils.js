@@ -9,7 +9,7 @@ const expect = require('chai')
   .expect;
 
 async function assertSentViaGSN(web3, txHash, opts = {}) {
-  const abiDecoder = require('../src/abi-decoder');
+  const abiDecoder = require('abi-decoder');
   abiDecoder.addABI(relayHub.abi);
 
   const receipt = await web3.eth.getTransactionReceipt(txHash);
