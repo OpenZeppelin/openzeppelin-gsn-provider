@@ -24,6 +24,8 @@ const web3 = new Web3(new GSNProvider('http://localhost:8545'));
 
 You can set up a GSN-powered web3 instance in your dapp using [`@openzeppelin/network`](https://github.com/OpenZeppelin/openzeppelin-network.js), a package designed for easily setting up your connection to the Ethereum network. 
 
+With React Hooks:
+
 ```js
 import { useWeb3Network } from '@openzeppelin/network';
 const local = useWeb3Network('http://127.0.0.1:8545', { gsn: true });
@@ -37,6 +39,8 @@ const local = useWeb3Network('http://127.0.0.1:8545', {
   gsn: { signKey: useEphemeralKey() } 
 });
 ```
+
+Learn more at [`@openzeppelin/network`](https://github.com/OpenZeppelin/openzeppelin-network.js).
 
 ## Usage
 
