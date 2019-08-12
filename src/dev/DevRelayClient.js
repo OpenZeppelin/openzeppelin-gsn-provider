@@ -11,9 +11,6 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 class DevRelayClient {
   constructor(web3, ownerAddress, relayerAddress, opts={}) {
-    if (!ownerAddress) throw new Error(`Relayer owner address is required`);
-    if (!relayerAddress) throw new Error(`Relayer address is required`);
-
     this.ownerAddress = ownerAddress;
     this.relayerAddress = relayerAddress;
     this.txFee = opts.txFee || 10;
@@ -24,6 +21,9 @@ class DevRelayClient {
   }
 
   async sendTransaction(payload) {
+    // Set accounts if not set in ctor
+    await this.ensureAccounts();
+
     // Start by registering in the relayer hub
     const txParams = payload.params[0];
     const hub = await this.getHubFromRecipient(txParams.to);
@@ -151,12 +151,14 @@ class DevRelayClient {
   }
 
   async register(hub) {
+    await this.ensureAccounts();
     await this.ensureStake(hub);
     await hub.methods.registerRelay(this.txFee.toString(), "http://gsn-dev-relayer.openzeppelin.com/").send({ from: this.relayerAddress });
     if (this.debug) console.log(`Registered relayer with address ${this.relayerAddress}`);
   }
 
   async ensureStake(hub, targetBalance=TARGET_BALANCE, minBalance=MIN_BALANCE) {
+    await this.ensureAccounts();
     const currentStake = await this.getCurrentStake(hub);
     const target = new BN(targetBalance);
     const min = new BN(minBalance);
@@ -173,6 +175,7 @@ class DevRelayClient {
   }
 
   async getCurrentStake(hub) {
+    await this.ensureAccounts();
     let currentStake;
     try {
       currentStake = (await hub.methods.getRelay(this.relayerAddress).call()).totalStake;
@@ -180,6 +183,30 @@ class DevRelayClient {
       currentStake = 0;
     }
     return new BN(currentStake);
+  }
+
+  async ensureAccounts() {
+    if (this.ownerAddress && this.relayerAddress) return;
+    
+    // If the current provider is a PrivateKey one, then eth.getAccounts will return the account
+    // that corresponds to signKey. We need to bypass it to get the actual accounts found on the node.
+    const web3 = (this.web3.currentProvider.isPrivateKeyProvider)
+      ? new this.web3.constructor(this.web3.currentProvider.baseProvider)
+      : this.web3;
+
+    // Get all accounts and take the first two to use as relayer and owner
+    let accounts;
+    try {
+      accounts = await web3.eth.getAccounts();
+    } catch (err) {
+      throw new Error(`Error getting accounts from local node for GSNDevProvider (${err.message}). Please set them manually using the ownerAddress and relayerAddress options.`);
+    }
+    
+    if (accounts.length < 2) {
+      throw new Error(`Error setting up owner and relayer accounts for GSNDevProvider (at least two unlocked accounts are needed on the local node but found ${accounts.length}). Please set them manually using the ownerAddress and relayerAddress options.`);
+    }
+    this.ownerAddress = this.ownerAddress || accounts[0];
+    this.relayerAddress = this.relayerAddress || accounts[1];
   }
 }
 

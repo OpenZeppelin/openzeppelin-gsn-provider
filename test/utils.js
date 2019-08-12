@@ -12,6 +12,7 @@ async function assertSentViaGSN(web3, txHash, opts = {}) {
   const abiDecoder = require('abi-decoder');
   abiDecoder.addABI(relayHub.abi);
 
+  txHash = txHash.transactionHash ? txHash.transactionHash : txHash;
   const receipt = await web3.eth.getTransactionReceipt(txHash);
   expect(receipt.to.toLowerCase()).to.eq(relayHub.address.toLowerCase());
   

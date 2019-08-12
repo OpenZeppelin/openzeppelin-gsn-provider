@@ -16,6 +16,7 @@ class PrivateKeyProvider {
     this.baseProvider = base;
 
     this.messageId = 0;
+    this.isPrivateKeyProvider = true;
   }
 
   send(payload, callback) {
