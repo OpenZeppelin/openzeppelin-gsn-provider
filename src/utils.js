@@ -1,5 +1,6 @@
 const ethUtils = require('ethereumjs-util');
 const BN = require('bignumber.js');
+const { toBN, soliditySha3 } = require('web3-utils');
 
 const abiDecoder = require('abi-decoder');
 const relayHubAbi = require('./tabookey-gasless/IRelayHub');
@@ -86,6 +87,28 @@ function fixSignature (signature) {
   return signature.slice(0, 130) + vHex;
 }
 
+function makeApproveFunction(signFn, verbose) {
+  return async function(data) {
+    const signature = fixSignature(
+      await signFn(
+        soliditySha3(
+          { type: 'address', value: data.relayerAddress },
+          { type: 'address', value: data.from },
+          { type: 'bytes', value: data.encodedFunctionCall },
+          { type: 'uint256', value: toBN(data.txFee) },
+          { type: 'uint256', value: toBN(data.gasPrice) },
+          { type: 'uint256', value: toBN(data.gas) },
+          { type: 'uint256', value: toBN(data.nonce) },
+          { type: 'address', value: data.relayHubAddress },
+          { type: 'address', value: data.to }
+        )
+      )
+    )
+    if (verbose) console.log(`Signature for GSN transaction is ${signature}`);
+    return signature;
+  }
+};
+
 module.exports = {
   appendAddress,
   callAsJsonRpc,
@@ -93,5 +116,6 @@ module.exports = {
   preconditionCodeToDescription,
   fixTransactionReceiptResponse,
   getApprovalData,
-  fixSignature
+  fixSignature,
+  makeApproveFunction
 }

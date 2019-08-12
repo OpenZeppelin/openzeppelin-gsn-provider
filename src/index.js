@@ -1,7 +1,7 @@
 const GSNProvider = require('./GSNProvider.js');
 const GSNDevProvider = require('./GSNDevProvider.js');
 const web3 = require('./web3.js');
-const { fixSignature, appendAddress } = require('./utils');
+const { fixSignature, appendAddress, makeApproveFunction } = require('./utils');
 
 module.exports = {
   GSNProvider,
@@ -9,6 +9,7 @@ module.exports = {
   web3,
   utils: {
     fixSignature,
-    appendAddress
+    appendAddress,
+    makeApproveFunction
   }
 };

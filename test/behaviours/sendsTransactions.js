@@ -1,8 +1,9 @@
 const Web3 = require('web3');
 const { createSignKey, assertGreetedEvent, assertSentViaGSN, assertNotSentViaGSN, LONG_MESSAGE, HARDCODED_RELAYER_OPTS } = require('../utils');
-const { toInt } = require('../../src/utils');
+const { abi: SignatureBouncerGreeterAbi, bytecode: SignatureBouncerGreeterBytecode } = require('../build/contracts/SignatureBouncerGreeter.json');
+const { toInt, makeApproveFunction } = require('../../src/utils');
 const { omit } = require('lodash');
-const { relayHub } = require('@openzeppelin/gsn-helpers');
+const { relayHub, fundRecipient } = require('@openzeppelin/gsn-helpers');
 
 const PROVIDER_URL = process.env.PROVIDER_URL || 'http://localhost:9545';
 
@@ -197,6 +198,34 @@ function sendsTransactions(createProviderFn) {
       validateApproveFunctionParams.call(this, params);
       assertPostGreetEvent.call(this, tx);
     })
+  });
+
+  context('with approval data on a bouncer', function () {
+    beforeEach(async function () {
+      const web3 = this.web3;
+      const approver = this.accounts[3];
+      this.approver = approver;
+
+      const gsnProvider = await createProviderFn.call(this, PROVIDER_URL, {
+        ...HARDCODED_RELAYER_OPTS,
+        approveFunction: makeApproveFunction(data => (
+          web3.eth.sign(data, approver)
+        ))
+      });
+
+      const SignatureBouncerGreeter = new this.web3.eth.Contract(SignatureBouncerGreeterAbi, null, { data: SignatureBouncerGreeterBytecode});
+      const greeter = await SignatureBouncerGreeter.deploy({ arguments: [approver] }).send({ from: this.deployer, gas: 3e6 });
+      await fundRecipient(this.web3, { recipient: greeter.options.address });
+      greeter.setProvider(gsnProvider);
+
+      this.signatureBouncerGreeter = greeter;
+    });
+
+    it('sends transaction to bouncer contract', async function () {
+      const tx = await this.signatureBouncerGreeter.methods.greet("Hello").send({ from: this.signer, gas: 5e6 });
+      await assertGreetedEvent(tx);
+      await assertSentViaGSN(this.web3, tx.transactionHash);
+    });
   });
 }
 

@@ -123,6 +123,16 @@ const approveFunction = async ({ from, to, encodedFunctionCall, txFee, gasPrice,
 const gsnProvider = new GSNProvider('http://localhost:8545', { approveFunction });
 ```
 
+Given that the pattern above is quite common, and is implemented in `@openzeppelin/contracts` by the `GSNBouncerSignature` contract, there is a helper function that takes care of bundling the meta-transaction parameters together and hashing them, so you only need to provide a signing function for an arbitrary blob.
+
+```js
+const { utils, GSNProvider } = require('@openzeppelin/gsn-provider');
+
+const gsnProvider = new GSNProvider({
+  approveFunction: utils.makeApproveFunction(data => web3.eth.sign(data, approver))
+});
+```
+
 ## Development provider
 
 In addition to the `GSNProvider`, this package includes a `GSNDevProvider`. This provider is meant to be used in development and testing environments only, and it acts as both a provider and a relayer in itself. Any transactions sent through it will be signed by the sender, and relayed by another address. It will register itself in the relay hub as `http://gsn-dev-relayer.openzeppelin.com/`. Note that this provider still needs a hub to exist on the network.

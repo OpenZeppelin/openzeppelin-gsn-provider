@@ -2,6 +2,7 @@ pragma solidity ^0.5.0;
 
 import "./IRelayRecipient.sol";
 import "./GSNContext.sol";
+import "./ECDSA.sol";
 
 contract VanillaGreeter {
   event Greeted(address indexed greeter, string message);
@@ -78,5 +79,46 @@ contract RejectfulGreeter is Greeter {
       uint256
   ) external view returns (uint256, bytes memory) {
     return (20, "");
+  }
+}
+
+contract SignatureBouncerGreeter is Greeter {
+  using ECDSA for bytes32;
+
+  address public trustedSigner;
+  
+  constructor(address _trustedSigner) public {
+    trustedSigner = _trustedSigner;
+  }
+
+  function acceptRelayedCall(
+    address relay,
+    address from,
+    bytes calldata encodedFunction,
+    uint256 transactionFee,
+    uint256 gasPrice,
+    uint256 gasLimit,
+    uint256 nonce,
+    bytes calldata approvalData,
+    uint256
+  ) external view returns (uint256, bytes memory) {
+
+    bytes memory blob = abi.encodePacked(
+      relay,
+      from,
+      encodedFunction,
+      transactionFee,
+      gasPrice,
+      gasLimit,
+      nonce, // Prevents replays on RelayHub
+      getHubAddr(), // Prevents replays in multiple RelayHubs
+      address(this) // Prevents replays in multiple recipients
+    );
+    
+    if (keccak256(blob).toEthSignedMessageHash().recover(approvalData) == trustedSigner) {
+      return (0, abi.encode(from, approvalData));
+    } else {
+      return (20, abi.encode(from, approvalData));
+    }
   }
 }
