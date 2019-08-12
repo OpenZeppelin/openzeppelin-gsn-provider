@@ -1,7 +1,7 @@
 const HubAbi = require('../tabookey-gasless/IRelayHub');
 const RecipientAbi = require('../tabookey-gasless/IRelayRecipient');
 const BN = require('bignumber.js');
-const { getApprovalData, appendAddress, preconditionCodeToDescription } = require('../utils');
+const { getApprovalData, appendAddress, preconditionCodeToDescription, createRelayHubFromRecipient } = require('../utils');
 const { getTransactionHash, getTransactionSignature } = require('../tabookey-gasless/utils');
 
 const TARGET_BALANCE = 2e18;
@@ -26,7 +26,7 @@ class DevRelayClient {
 
     // Start by registering in the relayer hub
     const txParams = payload.params[0];
-    const hub = await this.getHubFromRecipient(txParams.to);
+    const hub = await createRelayHubFromRecipient(this.web3, txParams.to);
     await this.register(hub);
 
     // Then sign the transaction as a regular provider would do
@@ -96,7 +96,7 @@ class DevRelayClient {
 
   async estimateGas(txParams, hubAddress) {
     if (!hubAddress) {
-      const hub = await this.getHubFromRecipient(txParams.to);
+      const hub = await createRelayHubFromRecipient(this.web3, txParams.to);
       hubAddress = hub.options.address;
     }
     const txParamsFromHub = {
@@ -118,36 +118,6 @@ class DevRelayClient {
     if (BN(maxCharge).isGreaterThan(BN(balance))) {
       throw new Error(`Recipient ${recipient} has not enough funds for paying for this relayed call (has ${balance}, requires ${maxCharge}).`);
     }
-}
-
-  async getHubFromRecipient(recipientAddress) {
-    if (!recipientAddress) throw new Error(`Recipient address is required`);
-    const recipient = new this.web3.eth.Contract(RecipientAbi, recipientAddress);
-    
-    let hubAddress;
-    try {
-      hubAddress = await recipient.methods.getHubAddr().call();
-    } catch (err) {
-      throw new Error(`Could not get relay hub address from recipient at ${recipientAddress}: ${err.message || err}`);
-    }
-    
-    if (hubAddress === ZERO_ADDRESS) {
-      throw new Error(`The relay hub address is set to zero in recipient at ${recipientAddress}. Make sure it is a valid recipient contract.`);
-    }
-
-    const hub = new this.web3.eth.Contract(HubAbi, hubAddress);
-
-    let hubVersion;
-    try {
-      hubVersion = await hub.methods.version().call();
-    } catch (err) {
-      throw new Error(`Could not query relay hub version at ${hubAddress} (${err.message}). Make sure the address corresponds to a relay hub.`);
-    }
-
-    if (!hubVersion.startsWith('1')) {
-        throw new Error(`Unsupported relay hub version '${hubVersion}'.`);
-    }
-    return hub;
   }
 
   async register(hub) {

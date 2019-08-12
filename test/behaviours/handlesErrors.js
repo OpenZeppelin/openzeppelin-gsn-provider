@@ -122,7 +122,7 @@ function handlesErrors(createProviderFn) {
       
       await expect (
         this.greeter.methods.greet("Hello").send({ from: this.signer })
-      ).to.be.rejectedWith(/could not query relay hub/i);
+      ).to.be.rejectedWith(/hub is not deployed/i);
     });
 
     it('throws if hub is not a hub', async function () {

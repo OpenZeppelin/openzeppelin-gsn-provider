@@ -12,7 +12,7 @@ const ethWallet = require('ethereumjs-wallet');
 const ethJsTx = require('ethereumjs-tx');
 const abi_decoder = require('abi-decoder');
 const BN = require('bignumber.js');
-const { appendAddress, toInt, preconditionCodeToDescription, getApprovalData } = require('../utils');
+const { appendAddress, toInt, preconditionCodeToDescription, getApprovalData, createRelayHubFromRecipient } = require('../utils');
 
 const relayHubAbi = require('./IRelayHub');
 const relayRecipientAbi = require('./IRelayRecipient');
@@ -82,14 +82,6 @@ class RelayClient {
         if (relayClientOptions.verbose)
             console.log('RR: ', payload.id, relayOptions);
         return relayOptions;
-    }
-
-    createRelayRecipient(addr) {
-        return new this.web3.eth.Contract(relayRecipientAbi, addr)
-    }
-
-    createRelayHub(addr) {
-        return new this.web3.eth.Contract(relayHubAbi, addr)
     }
 
     /**
@@ -296,7 +288,7 @@ class RelayClient {
      * (not strictly a client operation, but without a balance, the target contract can't accept calls)
      */
     async balanceOf(target) {
-        const relayHub = await this.createRelayHubFromRecipient(target);
+        const relayHub = await createRelayHubFromRecipient(this.web3, target);
         
         //note that the returned value is a promise too, returning BigNumber
         return relayHub.methods.balanceOf(target).call()
@@ -310,7 +302,7 @@ class RelayClient {
     async relayTransaction(encodedFunctionCall, options) {
 
         var self = this;
-        const relayHub = await this.createRelayHubFromRecipient(options.to);
+        const relayHub = await createRelayHubFromRecipient(this.web3, options.to);
 
         var nonce = parseInt(await relayHub.methods.getNonce(options.from).call());
 
@@ -498,36 +490,6 @@ class RelayClient {
         this.ephemeralKeypair = ephemeralKeypair
     }
 
-    async createRelayHubFromRecipient(recipientAddress) {
-        const relayRecipient = this.createRelayRecipient(recipientAddress);
-
-        let relayHubAddress;
-        try {
-            relayHubAddress = await relayRecipient.methods.getHubAddr().call();
-        } catch (err) {
-            throw new Error(`Could not get relay hub address from recipient at ${recipientAddress} (${err.message}). Make sure it is a valid recipient contract.`);
-        }
-
-        if (!relayHubAddress || ethUtils.isZeroAddress(relayHubAddress)) {
-            throw new Error(`The relay hub address is set to zero in recipient at ${recipientAddress}. Make sure it is a valid recipient contract.`);
-        }
-
-        const relayHub = this.createRelayHub(relayHubAddress);
-
-        let hubVersion;
-        try {
-            hubVersion = await relayHub.methods.version().call();
-        } catch (err) {
-            throw new Error(`Could not query relay hub version at ${relayHubAddress} (${err.message}). Make sure the address corresponds to a relay hub.`);
-        }
-
-        if (!hubVersion.startsWith('1')) {
-            throw new Error(`Unsupported relay hub version '${hubVersion}'.`);
-        }
-
-        return relayHub;
-    }
-
     async validateRecipientBalance(relayHub, recipient, gasLimit, gasPrice, relayFee) {
         const balance = await relayHub.methods.balanceOf(recipient).call();
         if (BN(balance).isZero()) {
@@ -542,7 +504,7 @@ class RelayClient {
 
     async estimateGas(txParams, hubAddress) {
         if (!hubAddress) {
-            const hub = await this.createRelayHubFromRecipient(txParams.to);
+            const hub = await createRelayHubFromRecipient(this.web3, txParams.to);
             hubAddress = hub.options.address;
         }
         const txParamsFromHub = {

@@ -2,8 +2,10 @@ const ethUtils = require('ethereumjs-util');
 const BN = require('bignumber.js');
 const { toBN, soliditySha3 } = require('web3-utils');
 
-const abiDecoder = require('abi-decoder');
 const relayHubAbi = require('./tabookey-gasless/IRelayHub');
+const relayRecipientAbi = require('./tabookey-gasless/IRelayRecipient');
+
+const abiDecoder = require('abi-decoder');
 abiDecoder.addABI(relayHubAbi);
 
 function appendAddress(data, address) {
@@ -109,6 +111,61 @@ function makeApproveFunction(signFn, verbose) {
   }
 };
 
+async function createRelayHubFromRecipient(web3, recipientAddress) {
+  const relayRecipient = createRelayRecipient(web3, recipientAddress);
+  let relayHubAddress;
+  try {
+      relayHubAddress = await relayRecipient.methods.getHubAddr().call();
+  } catch (err) {
+      throw new Error(`Could not get relay hub address from recipient at ${recipientAddress} (${err.message}). Make sure it is a valid recipient contract.`);
+  }
+
+  if (!relayHubAddress || ethUtils.isZeroAddress(relayHubAddress)) {
+      throw new Error(`The relay hub address is set to zero in recipient at ${recipientAddress}. Make sure it is a valid recipient contract.`);
+  }
+
+  const code = await web3.eth.getCode(relayHubAddress);
+  if (code.length <= 2) {
+    throw new Error(`Relay hub is not deployed at address ${relayHubAddress}`);
+  }
+
+  const relayHub = createRelayHub(web3, relayHubAddress);
+  let hubVersion;
+  try {
+      hubVersion = await relayHub.methods.version().call();
+  } catch (err) {
+      throw new Error(`Could not query relay hub version at ${relayHubAddress} (${err.message}). Make sure the address corresponds to a relay hub.`);
+  }
+
+  if (!hubVersion.startsWith('1')) {
+      throw new Error(`Unsupported relay hub version '${hubVersion}'.`);
+  }
+
+  return relayHub;
+}
+
+function createRelayRecipient(web3, addr) {
+  return new web3.eth.Contract(relayRecipientAbi, addr)
+}
+
+function createRelayHub(web3, addr) {
+  return new web3.eth.Contract(relayHubAbi, addr)
+}
+
+async function isRelayHubDeployedForRecipient(web3, recipientAddr) {
+  try {
+    await createRelayHubFromRecipient(web3, recipientAddr);
+    return true;
+  } catch (_err) {
+    return false;
+  }
+}
+
+async function getRecipientFunds(web3, recipientAddr) {
+  const relayHub = await createRelayHubFromRecipient(web3, recipientAddr);
+  return await relayHub.methods.balanceOf(recipientAddr).call();
+}
+
 module.exports = {
   appendAddress,
   callAsJsonRpc,
@@ -117,5 +174,8 @@ module.exports = {
   fixTransactionReceiptResponse,
   getApprovalData,
   fixSignature,
-  makeApproveFunction
+  makeApproveFunction,
+  createRelayHubFromRecipient,
+  isRelayHubDeployedForRecipient,
+  getRecipientFunds
 }
