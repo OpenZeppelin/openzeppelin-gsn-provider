@@ -5,7 +5,7 @@ const GSNProvider = require('./GSNProvider.js');
  * @param {*} baseWeb3 wraps the provider of this instance on a GSN one
  * @param {*} options useGSN, signKey, other RelayClient options
  */
-function withGSN(baseWeb3, options = {})   {
+function withGSN(baseWeb3, options = {}) {
   const gsnProvider = isGSNProvider(baseWeb3.currentProvider)
     ? baseWeb3.currentProvider
     : new GSNProvider(baseWeb3.currentProvider, options);
@@ -26,11 +26,11 @@ function setGSN(web3, options = {}) {
 }
 
 function isGSNProvider(provider) {
-  return (provider.isGSNProvider || provider.constructor.name === 'RelayProvider');
+  return provider.isGSNProvider || provider.constructor.name === 'RelayProvider';
 }
 
 module.exports = {
   setGSN,
   withGSN,
-  isGSNProvider
+  isGSNProvider,
 };

@@ -1,7 +1,13 @@
 const GSNProvider = require('./GSNProvider.js');
 const GSNDevProvider = require('./GSNDevProvider.js');
 const web3 = require('./web3.js');
-const { fixSignature, appendAddress, makeApproveFunction, getRecipientFunds, isRelayHubDeployedForRecipient } = require('./utils');
+const {
+  fixSignature,
+  appendAddress,
+  makeApproveFunction,
+  getRecipientFunds,
+  isRelayHubDeployedForRecipient,
+} = require('./utils');
 
 module.exports = {
   GSNProvider,
@@ -12,6 +18,6 @@ module.exports = {
     appendAddress,
     makeApproveFunction,
     getRecipientFunds,
-    isRelayHubDeployedForRecipient
-  }
+    isRelayHubDeployedForRecipient,
+  },
 };

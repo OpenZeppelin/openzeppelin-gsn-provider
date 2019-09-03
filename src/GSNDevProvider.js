@@ -6,12 +6,7 @@ class GSNDevProvider extends GSNProvider {
     super(base, options);
 
     // Overwrite relayClient with development one
-    this.relayClient = new DevRelayClient(
-      this.relayClient.web3, 
-      options.ownerAddress, 
-      options.relayerAddress, 
-      options
-    );
+    this.relayClient = new DevRelayClient(this.relayClient.web3, options.ownerAddress, options.relayerAddress, options);
   }
 }
 
