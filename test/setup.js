@@ -14,15 +14,15 @@ async function setupAccounts() {
   this.signer = this.accounts[2];
   this.failsPre = this.accounts[7];
   this.failsPost = this.accounts[8];
-};
+}
 
 async function deployGreeter() {
-  const Greeter = new this.web3.eth.Contract(GreeterAbi, null, { data: GreeterBytecode});
+  const Greeter = new this.web3.eth.Contract(GreeterAbi, null, { data: GreeterBytecode });
   this.greeter = await Greeter.deploy().send({ from: this.deployer, gas: 2e6 });
   await fundRecipient(this.web3, { recipient: this.greeter.options.address });
 }
 
 module.exports = {
   setupAccounts,
-  deployGreeter
-}
+  deployGreeter,
+};

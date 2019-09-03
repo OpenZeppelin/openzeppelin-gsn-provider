@@ -5,7 +5,21 @@
   "main": "src/index.js",
   "scripts": {
     "test": "./scripts/test.sh",
-    "compile-mocks": "cd test && oz compile"
+    "compile-mocks": "cd test && oz compile",
+    "pre-commit": "lint-staged",
+    "pre-push": "npm run test"
+  },
+  "lint-staged": {
+    "*.js": [
+      "prettier --write",
+      "git add"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-push": "npm run pre-push",
+      "pre-commit": "npm run pre-commit"
+    }
   },
   "files": [
     "README.md",
@@ -41,8 +55,11 @@
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chai-string": "^1.5.0",
+    "husky": "^3.0.5",
+    "lint-staged": "^9.2.5",
     "lodash": "^4.17.15",
     "mocha": "^6.2.0",
+    "prettier": "^1.18.2",
     "sinon": "^7.4.1"
   }
 }

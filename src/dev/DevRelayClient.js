@@ -1,7 +1,12 @@
 const HubAbi = require('../tabookey-gasless/IRelayHub');
 const RecipientAbi = require('../tabookey-gasless/IRelayRecipient');
 const BN = require('bignumber.js');
-const { getApprovalData, appendAddress, preconditionCodeToDescription, createRelayHubFromRecipient } = require('../utils');
+const {
+  getApprovalData,
+  appendAddress,
+  preconditionCodeToDescription,
+  createRelayHubFromRecipient,
+} = require('../utils');
 const { getTransactionHash, getTransactionSignature } = require('../tabookey-gasless/utils');
 
 const TARGET_BALANCE = 2e18;
@@ -10,7 +15,7 @@ const UNSTAKE_DELAY = 3600 * 24 * 7 * 4;
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 class DevRelayClient {
-  constructor(web3, ownerAddress, relayerAddress, opts={}) {
+  constructor(web3, ownerAddress, relayerAddress, opts = {}) {
     this.ownerAddress = ownerAddress;
     this.relayerAddress = relayerAddress;
     this.txFee = opts.txFee || 10;
@@ -31,15 +36,22 @@ class DevRelayClient {
 
     // Then sign the transaction as a regular provider would do
     const nonce = parseInt(await hub.methods.getNonce(txParams.from).call());
-    const gasPrice = this.options.fixedGasPrice || txParams.gasPrice || await this.web3.eth.getGasPrice();
-    const gas = this.options.fixedGasLimit || txParams.gas || await this.estimateGas(txParams, hub.options.address);
-    
+    const gasPrice = this.options.fixedGasPrice || txParams.gasPrice || (await this.web3.eth.getGasPrice());
+    const gas = this.options.fixedGasLimit || txParams.gas || (await this.estimateGas(txParams, hub.options.address));
+
     await this.validateRecipientBalance(hub, txParams.to, gas, gasPrice);
     if (this.debug) console.log(`Recipient has enough balance to pay for meta tx`);
 
     const txHashToSign = getTransactionHash(
-      txParams.from, txParams.to, txParams.data, this.txFee, gasPrice, gas, nonce, 
-      hub.options.address, this.relayerAddress
+      txParams.from,
+      txParams.to,
+      txParams.data,
+      this.txFee,
+      gasPrice,
+      gas,
+      nonce,
+      hub.options.address,
+      this.relayerAddress,
     );
 
     const signature = await getTransactionSignature(this.web3, txParams.from, txHashToSign);
@@ -54,10 +66,10 @@ class DevRelayClient {
       gas,
       nonce,
       relayerAddress: this.relayerAddress,
-      relayHubAddress: hub.options.address
+      relayHubAddress: hub.options.address,
     });
     if (this.approvalData !== '0x' && this.debug) console.log(`Approval data is ${approvalData}`);
-    
+
     // Here the client would send the txParams, signature, and approvalData to the relayer
     // Instead, we send it from the same process, posing as a relayer
     await this.validateCanRelay(hub, txParams, gasPrice, gas, nonce, signature, approvalData);
@@ -67,24 +79,35 @@ class DevRelayClient {
     if (this.debug) console.log(`Relaying transaction with gas ${requiredGas}`);
 
     return new Promise((resolve, reject) => {
-      hub.methods.relayCall(
-        txParams.from, txParams.to, txParams.data, this.txFee, gasPrice, gas, nonce, signature, approvalData
-      ).send({ from: this.relayerAddress, gasPrice, gas: requiredGas })
-      .on('transactionHash', (txHash) => {
-        resolve(txHash);
-      })
-      .on('error', (err) => {
-        reject(err);
-      })
+      hub.methods
+        .relayCall(txParams.from, txParams.to, txParams.data, this.txFee, gasPrice, gas, nonce, signature, approvalData)
+        .send({ from: this.relayerAddress, gasPrice, gas: requiredGas })
+        .on('transactionHash', txHash => {
+          resolve(txHash);
+        })
+        .on('error', err => {
+          reject(err);
+        });
     });
   }
 
   async validateCanRelay(hub, txParams, gasPrice, gas, nonce, signature, approvalData) {
     let status, recipientContext;
     try {
-      ({ status, recipientContext } = await hub.methods.canRelay(
-        this.relayerAddress, txParams.from, txParams.to, txParams.data, this.txFee, gasPrice, gas, nonce, signature, approvalData
-      ).call({ from: this.relayerAddress }));
+      ({ status, recipientContext } = await hub.methods
+        .canRelay(
+          this.relayerAddress,
+          txParams.from,
+          txParams.to,
+          txParams.data,
+          this.txFee,
+          gasPrice,
+          gas,
+          nonce,
+          signature,
+          approvalData,
+        )
+        .call({ from: this.relayerAddress }));
     } catch (err) {
       throw new Error(`Error checking canRelay for transaction: ${err.message || err}`);
     }
@@ -100,10 +123,10 @@ class DevRelayClient {
       hubAddress = hub.options.address;
     }
     const txParamsFromHub = {
-      ... txParams, 
+      ...txParams,
       from: hubAddress,
-      data: appendAddress(txParams.data, txParams.from)
-    }
+      data: appendAddress(txParams.data, txParams.from),
+    };
     return this.web3.eth.estimateGas(txParamsFromHub);
   }
 
@@ -111,23 +134,27 @@ class DevRelayClient {
     const relayFee = this.txFee;
     const balance = await hub.methods.balanceOf(recipient).call();
     if (BN(balance).isZero()) {
-      throw new Error(`Recipient ${recipient} has no funds for paying for relayed calls on the relay hub.`)
+      throw new Error(`Recipient ${recipient} has no funds for paying for relayed calls on the relay hub.`);
     }
 
     const maxCharge = await hub.methods.maxPossibleCharge(gasLimit, gasPrice, relayFee).call();
     if (BN(maxCharge).isGreaterThan(BN(balance))) {
-      throw new Error(`Recipient ${recipient} has not enough funds for paying for this relayed call (has ${balance}, requires ${maxCharge}).`);
+      throw new Error(
+        `Recipient ${recipient} has not enough funds for paying for this relayed call (has ${balance}, requires ${maxCharge}).`,
+      );
     }
   }
 
   async register(hub) {
     await this.ensureAccounts();
     await this.ensureStake(hub);
-    await hub.methods.registerRelay(this.txFee.toString(), "http://gsn-dev-relayer.openzeppelin.com/").send({ from: this.relayerAddress });
+    await hub.methods
+      .registerRelay(this.txFee.toString(), 'http://gsn-dev-relayer.openzeppelin.com/')
+      .send({ from: this.relayerAddress });
     if (this.debug) console.log(`Registered relayer with address ${this.relayerAddress}`);
   }
 
-  async ensureStake(hub, targetBalance=TARGET_BALANCE, minBalance=MIN_BALANCE) {
+  async ensureStake(hub, targetBalance = TARGET_BALANCE, minBalance = MIN_BALANCE) {
     await this.ensureAccounts();
     const currentStake = await this.getCurrentStake(hub);
     const target = new BN(targetBalance);
@@ -149,7 +176,7 @@ class DevRelayClient {
     let currentStake;
     try {
       currentStake = (await hub.methods.getRelay(this.relayerAddress).call()).totalStake;
-    } catch(err) {
+    } catch (err) {
       currentStake = 0;
     }
     return new BN(currentStake);
@@ -157,10 +184,10 @@ class DevRelayClient {
 
   async ensureAccounts() {
     if (this.ownerAddress && this.relayerAddress) return;
-    
+
     // If the current provider is a PrivateKey one, then eth.getAccounts will return the account
     // that corresponds to signKey. We need to bypass it to get the actual accounts found on the node.
-    const web3 = (this.web3.currentProvider.isPrivateKeyProvider)
+    const web3 = this.web3.currentProvider.isPrivateKeyProvider
       ? new this.web3.constructor(this.web3.currentProvider.baseProvider)
       : this.web3;
 
@@ -169,11 +196,15 @@ class DevRelayClient {
     try {
       accounts = await web3.eth.getAccounts();
     } catch (err) {
-      throw new Error(`Error getting accounts from local node for GSNDevProvider (${err.message}). Please set them manually using the ownerAddress and relayerAddress options.`);
+      throw new Error(
+        `Error getting accounts from local node for GSNDevProvider (${err.message}). Please set them manually using the ownerAddress and relayerAddress options.`,
+      );
     }
-    
+
     if (accounts.length < 2) {
-      throw new Error(`Error setting up owner and relayer accounts for GSNDevProvider (at least two unlocked accounts are needed on the local node but found ${accounts.length}). Please set them manually using the ownerAddress and relayerAddress options.`);
+      throw new Error(
+        `Error setting up owner and relayer accounts for GSNDevProvider (at least two unlocked accounts are needed on the local node but found ${accounts.length}). Please set them manually using the ownerAddress and relayerAddress options.`,
+      );
     }
     this.ownerAddress = this.ownerAddress || accounts[0];
     this.relayerAddress = this.relayerAddress || accounts[1];
