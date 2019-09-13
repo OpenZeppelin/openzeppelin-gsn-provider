@@ -1,6 +1,6 @@
 {
   "name": "@openzeppelin/gsn-provider",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Web3 provider for GSN",
   "main": "src/index.js",
   "scripts": {
