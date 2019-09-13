@@ -14,7 +14,10 @@ class GSNProvider {
     this.baseSend = (base.sendAsync || base.send).bind(base);
 
     this.sendAsync = this.send.bind(this);
-    this.relayClient = new RelayClient(web3, options);
+    this.relayClient = new RelayClient(web3, {
+      ...options,
+      userAgent: `oz-gsn-provider-${require('../package.json').version}`,
+    });
     this.useGSN = options && typeof options.useGSN !== 'undefined' ? options.useGSN : true;
     this.isGSNProvider = true;
     this.options = options;

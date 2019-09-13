@@ -286,7 +286,7 @@ class RelayClient {
         };
         console.log('sendViaRelay to URL: ' + relayUrl + ' ' + JSON.stringify(jsonRequestData, replacer));
       }
-      self.httpSend.send(relayUrl + '/relay', jsonRequestData, callback);
+      self.httpSend.send(relayUrl + '/relay', { ...jsonRequestData, userAgent: self.config.userAgent }, callback);
     });
   }
 
