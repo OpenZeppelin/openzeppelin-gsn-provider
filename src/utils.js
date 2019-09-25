@@ -178,6 +178,24 @@ async function getRecipientFunds(web3, recipientAddr) {
   return await relayHub.methods.balanceOf(recipientAddr).call();
 }
 
+// Gtxdatazero 4 Paid for every zero byte of data or code for a transaction.
+// Gtxdatanonzero 68 Paid for every non-zero byte of data or code for a transaction
+// From yellow paper https://gavwood.com/paper.pdf
+// May change soon (EIP 2028: Transaction data gas cost reduction) https://eips.ethereum.org/EIPS/eip-2028
+function getCallDataGas(data) {
+  if (typeof data !== 'string') throw new Error('Data has to be a string');
+  if (data.startsWith('0x')) data = data.slice(2);
+  let gasCost = 0;
+  for (let i = 0; i < data.length; i += 2) {
+    if (data.substr(i, 2) === '00') {
+      gasCost += 4;
+    } else {
+      gasCost += 68;
+    }
+  }
+  return gasCost;
+}
+
 module.exports = {
   appendAddress,
   callAsJsonRpc,
@@ -190,4 +208,5 @@ module.exports = {
   createRelayHubFromRecipient,
   isRelayHubDeployedForRecipient,
   getRecipientFunds,
+  getCallDataGas,
 };
