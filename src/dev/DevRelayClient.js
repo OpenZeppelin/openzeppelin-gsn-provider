@@ -8,6 +8,7 @@ const {
   createRelayHubFromRecipient,
 } = require('../utils');
 const { getTransactionHash, getTransactionSignature } = require('../tabookey-gasless/utils');
+const { getCallDataGas } = require('../utils');
 
 const TARGET_BALANCE = 2e18;
 const MIN_BALANCE = 2e17;
@@ -75,7 +76,9 @@ class DevRelayClient {
     await this.validateCanRelay(hub, txParams, gasPrice, gas, nonce, signature, approvalData);
     if (this.debug) console.log(`Can relay check succeeded`);
 
-    const requiredGas = await hub.methods.requiredGas(gas.toString()).call();
+    const requiredGas = BN(await hub.methods.requiredGas(gas.toString()).call())
+      .plus(getCallDataGas(txParams.data))
+      .toString();
     if (this.debug) console.log(`Relaying transaction with gas ${requiredGas}`);
 
     return new Promise((resolve, reject) => {
