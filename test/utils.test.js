@@ -36,7 +36,7 @@ describe('utils', function() {
     });
   });
 
-  describe.only('#getCallDataGas', function() {
+  describe('#getCallDataGas', function() {
     it('gets a valid CallData cost for long data', function() {
       const gas = getCallDataGas(
         '2ac0df260000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000b68656c6c6f20776f726c64000000000000000000000000000000000000000000',
