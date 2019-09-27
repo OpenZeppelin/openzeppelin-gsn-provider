@@ -14,6 +14,12 @@ const TARGET_BALANCE = 2e18;
 const MIN_BALANCE = 2e17;
 const UNSTAKE_DELAY = 3600 * 24 * 7 * 4;
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const RELAY_STATE = Object.freeze({
+  Unknown: 0, // The relay is unknown to the system: it has never been staked for
+  Staked: 1, // The relay has been staked for, but it is not yet active
+  Registered: 2, // The relay has registered itself, and is active (can relay calls)
+  Removed: 3    // The relay has been removed by its owner and can no longer relay calls. It must wait for its unstakeDelay to elapse before it can unstake
+})
 
 class DevRelayClient {
   constructor(web3, ownerAddress, relayerAddress, opts = {}) {
@@ -33,7 +39,11 @@ class DevRelayClient {
     // Start by registering in the relayer hub
     const txParams = payload.params[0];
     const hub = await createRelayHubFromRecipient(this.web3, txParams.to);
-    await this.register(hub);
+    const isNotRegistered = !(await this.isRegistered(hub))
+    if(isNotRegistered) {
+      if (this.debug) console.log(`Relayer is not registered yet. Registering...`);
+      await this.register(hub);
+    }
 
     // Then sign the transaction as a regular provider would do
     const nonce = parseInt(await hub.methods.getNonce(txParams.from).call());
@@ -183,6 +193,16 @@ class DevRelayClient {
       currentStake = 0;
     }
     return new BN(currentStake);
+  }
+
+  async isRegistered(hub) {
+    let currentState;
+    try {
+      currentState = (await hub.methods.getRelay(this.relayerAddress).call()).state;
+    } catch (err) {
+      currentState = 0;
+    }
+    return Number(currentState) === RELAY_STATE.Registered;
   }
 
   async ensureAccounts() {
