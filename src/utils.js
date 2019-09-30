@@ -209,4 +209,5 @@ module.exports = {
   isRelayHubDeployedForRecipient,
   getRecipientFunds,
   getCallDataGas,
+  createRelayHub
 };

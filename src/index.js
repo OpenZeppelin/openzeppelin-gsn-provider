@@ -19,5 +19,6 @@ module.exports = {
     makeApproveFunction,
     getRecipientFunds,
     isRelayHubDeployedForRecipient,
+    createRelayHub
   },
 };
