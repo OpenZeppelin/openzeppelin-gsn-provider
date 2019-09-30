@@ -51,7 +51,17 @@ class RelayClient {
    *          Note that the resulting gasPrice must be accepted by relay (above its minGasPrice)
    *
    *manual settings: these can be used to override the default setting.
-   *    relayUrl, relayAddress - avoid lookup on relayHub for relays, and always use this URL/address
+   *    predefinedRelay - avoid lookup on relayHub for relays, and always use this predefined relay. 
+   *       An example of `predefinedRelay` Object :
+   *        {
+   *          RelayServerAddress: '0x73a652f54d5fd8273f17a28e206d47f5bd1bc06a',
+   *          MinGasPrice: 20000000000,
+   *          Ready: true,
+   *          Version: '0.4.1',
+   *          relayUrl: 'http://localhost:8090',
+   *          transactionFee: '70' 
+   *        }
+   *       It could be retrieved from `/getaddr` of a relayer. e.g `curl http://localhost:8090/getaddr`
    *    force_gasLimit - force gaslimit, instead of transaction paramter
    *    force_gasPrice - force gasPrice, instread of transaction parameter.
    */
@@ -399,7 +409,12 @@ class RelayClient {
     let pinger = await this.serverHelper.newActiveRelayPinger(blockFrom, gasPrice);
     let errors = [];
     for (;;) {
-      let activeRelay = await pinger.nextRelay();
+      let activeRelay
+      if (self.config.predefinedRelay) {
+        activeRelay = self.config.predefinedRelay;
+      } else {
+        activeRelay = await pinger.nextRelay();
+      }
       if (!activeRelay) {
         const subErrors = errors.concat(pinger.errors);
         const error = new Error(
