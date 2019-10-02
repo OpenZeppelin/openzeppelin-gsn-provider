@@ -39,8 +39,7 @@ class DevRelayClient {
     // Start by registering in the relayer hub
     const txParams = payload.params[0];
     const hub = await createRelayHubFromRecipient(this.web3, txParams.to);
-    const isNotRegistered = !(await this.isRegistered(hub))
-    if(isNotRegistered) {
+    if(!(await this.isRegistered(hub))) {
       if (this.debug) console.log(`Relayer is not registered yet. Registering...`);
       await this.register(hub);
     }
@@ -190,6 +189,7 @@ class DevRelayClient {
     try {
       currentStake = (await hub.methods.getRelay(this.relayerAddress).call()).totalStake;
     } catch (err) {
+      console.error(`Error getting current relayer stake ${err.message}`)
       currentStake = 0;
     }
     return new BN(currentStake);
@@ -200,6 +200,7 @@ class DevRelayClient {
     try {
       currentState = (await hub.methods.getRelay(this.relayerAddress).call()).state;
     } catch (err) {
+      console.error(`Error getting current relayer state ${err.message}`)
       currentState = 0;
     }
     return Number(currentState) === RELAY_STATE.Registered;
