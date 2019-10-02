@@ -55,9 +55,6 @@ class RelayClient {
    *       An example of `predefinedRelay` Object :
    *        {
    *          RelayServerAddress: '0x73a652f54d5fd8273f17a28e206d47f5bd1bc06a',
-   *          MinGasPrice: 20000000000,
-   *          Ready: true,
-   *          Version: '0.4.1',
    *          relayUrl: 'http://localhost:8090',
    *          transactionFee: '70' 
    *        }
