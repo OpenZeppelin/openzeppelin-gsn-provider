@@ -51,7 +51,14 @@ class RelayClient {
    *          Note that the resulting gasPrice must be accepted by relay (above its minGasPrice)
    *
    *manual settings: these can be used to override the default setting.
-   *    relayUrl, relayAddress - avoid lookup on relayHub for relays, and always use this URL/address
+   *    preferredRelayer - skip relayer lookup and use this preferred relayer, fallbacking to regular lookup on error
+   *       An example preferredRelayer configuration:
+   *        {
+   *          RelayServerAddress: '0x73a652f54d5fd8273f17a28e206d47f5bd1bc06a',
+   *          relayUrl: 'http://localhost:8090',
+   *          transactionFee: '70'
+   *        }
+   *       These values can be be retrieved from the `/getaddr` endpoint of a relayer. e.g `curl http://localhost:8090/getaddr`
    *    force_gasLimit - force gaslimit, instead of transaction paramter
    *    force_gasPrice - force gasPrice, instread of transaction parameter.
    */
@@ -398,18 +405,29 @@ class RelayClient {
     let blockFrom = Math.max(1, blockNow - relay_lookup_limit_blocks);
     let pinger = await this.serverHelper.newActiveRelayPinger(blockFrom, gasPrice);
     let errors = [];
+
+    let activeRelay;
     for (;;) {
-      let activeRelay = await pinger.nextRelay();
-      if (!activeRelay) {
-        const subErrors = errors.concat(pinger.errors);
-        const error = new Error(
-          `No relayer responded or accepted the transaction out of the ${pinger.pingedRelays} queried:\n${subErrors
-            .map(err => ` ${err}`)
-            .join('\n')}`,
-        );
-        error.errors = subErrors;
-        throw error;
+      // Relayer lookup - we prefer the preferred relayer, but default to regular lookup on failure
+      if (activeRelay === undefined && self.config.preferredRelayer !== undefined) {
+        activeRelay = self.config.preferredRelayer;
+      } else {
+        const nextRelay = await pinger.nextRelay();
+
+        if (nextRelay) {
+          activeRelay = nextRelay;
+        } else {
+          const subErrors = errors.concat(pinger.errors);
+          const error = new Error(
+            `No relayer responded or accepted the transaction out of the ${
+              pinger.pingedRelays
+            } queried:\n${subErrors.map(err => ` ${err}`).join('\n')}`,
+          );
+          error.errors = subErrors;
+          throw error;
+        }
       }
+
       let relayAddress = activeRelay.RelayServerAddress;
       let relayUrl = activeRelay.relayUrl;
       let txfee = parseInt(options.txfee || activeRelay.transactionFee);

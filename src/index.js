@@ -7,6 +7,7 @@ const {
   makeApproveFunction,
   getRecipientFunds,
   isRelayHubDeployedForRecipient,
+  createRelayHub,
 } = require('./utils');
 
 module.exports = {
@@ -19,5 +20,6 @@ module.exports = {
     makeApproveFunction,
     getRecipientFunds,
     isRelayHubDeployedForRecipient,
+    createRelayHub,
   },
 };
