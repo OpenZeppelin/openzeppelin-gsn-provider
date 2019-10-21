@@ -184,6 +184,15 @@ Available options for the `GSNProvider`:
 
 Advanced options for the provider (most likely you will not need these ones):
 
+skip relayer lookup and use this preferred relayer, fallbacking to regular lookup on error
+   *       An example preferredRelayer configuration:
+   *        {
+   *          RelayServerAddress: '0x73a652f54d5fd8273f17a28e206d47f5bd1bc06a',
+   *          relayUrl: 'http://localhost:8090',
+   *          transactionFee: '70'
+   *        }
+
+- `preferredRelayer (object)`: attempt to use this relayer, falling back to the regular lookup algorithm on failure. Mandatory options are `RelayServerAddress`, `relayUrl` and `transactionFee`.
 - `gasPriceFactorPercent (integer)`: percentage increase over the network gas price for gsn transactions (defaults to 20, note that you need to clear web3 default fixed gasprice for this setting to go into effect).
 - `httpTimeout (integer)`: timeout in ms for HTTP requests to relayers (defaults to 10000).
 - `allowedRelayNonceGap (integer)`: (defaults to 3)
