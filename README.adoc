@@ -1,21 +1,21 @@
-# OpenZeppelin GSN Web3 Provider
+= OpenZeppelin GSN Provider
 
 [![npm (scoped)](https://img.shields.io/npm/v/@openzeppelin/gsn-provider)](https://www.npmjs.com/package/@openzeppelin/gsn-provider)
 [![CircleCI](https://circleci.com/gh/OpenZeppelin/openzeppelin-gsn-provider.svg?style=shield)](https://circleci.com/gh/OpenZeppelin/openzeppelin-gsn-provider)
 
-# GSN Provider
+= GSN Provider
 
 **A web3.js compatible provider for sending transactions via the Gas Station Network (GSN)**. This package wraps a modified version of the https://github.com/tabookey/tabookey-gasless/blob/master/src/js/relayclient/RelayClient.js[`RelayClient`] from `tabookey-gasless` with a custom web3 Provider.
 
-## Overview
+== Overview
 
-### Installation
+=== Installation
 
 ```bash
 $ npm install @openzeppelin/gsn-provider
 ```
 
-### Usage
+=== Usage
 
 Create a `GSNProvider` and use it as the provider for your web3 instance:
 
@@ -38,13 +38,13 @@ await myContract.methods.myFunction().send({ from });
 await myContract.methods.myFunction().send({ from, useGSN: false });
 ```
 
-## Learn More
+== Learn More
 
 * Check out docs/modules/ROOT/pages/getting-started.adoc[Getting Started] to use GSN Provider in a new project.
 * The docs/modules/ROOT/pages/testing-gsn-applications.adoc[Testing GSN Applications] will teach you how to test your project locally.
 * For detailed usage information, take a look at the docs/modules/ROOT/pages/api.adoc[API Reference].
 
 
-## License
+== License
 
 Released under the MIT License.
