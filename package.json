@@ -24,7 +24,7 @@
     }
   },
   "files": [
-    "README.md",
+    "README.adoc",
     "LICENSE",
     "src",
     "package.json"
