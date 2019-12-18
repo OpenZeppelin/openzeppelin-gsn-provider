@@ -12,7 +12,7 @@ new GSNProvider("http://localhost:8545", options);
 These are documented below.
 
 [[use-gsn]]
-=== useGSN
+=== `useGSN`
 
 ```javascript
 useGSN (bool)
@@ -20,7 +20,7 @@ useGSN (bool)
 
 Whether to send meta txs by default, or a function that receives a payload and returns whether to use a meta tx (defaults to true).
 
-=== signKey
+=== `signKey`
 
 ```javascript
 signKey (hex string)
@@ -29,14 +29,14 @@ signKey (hex string)
 Optional private key to sign the meta txs, using the underlying provider `sign` if not set.
 
 [[approve-function]]
-=== approveFunction
+=== `approveFunction`
 ```javascript
 approveFunction (function)
 ```
 
 Optional function for generating application approval data for a transaction, and returns a `bytes` approval data (such as a signature) that can be checked in the
 recipient; receives as a parameter a single object with the properties `from`, `to`, `encodedFunctionCall`, `txFee`, `gasPrice`, `gas`, `nonce`, `relayerAddress`, `relayHubAddress`.
-=== fixedGasPrice
+=== `fixedGasPrice`
 
 ```javascript
 fixedGasPrice (integer|string)
@@ -44,7 +44,7 @@ fixedGasPrice (integer|string)
 
 Fixed gas price to use in all gsn transactions.
 
-=== fixedGasLimit
+=== `fixedGasLimit`
 
 ```javascript
 fixedGasLimit (integer|string)
@@ -52,7 +52,7 @@ fixedGasLimit (integer|string)
 
 Fixed gas limit to use in all gsn transactions.
 
-=== minStake
+=== `minStake`
 
 ```javascript
 minStake (integer)
@@ -60,7 +60,7 @@ minStake (integer)
 
 Filters out relays with stake below this value (optional)
 
-=== minDelay
+=== `minDelay`
 
 ```javascript
 minDelay (integer)
@@ -68,7 +68,7 @@ minDelay (integer)
 
 Filters out relays with unstake delay below this value (optional)
 
-=== verbose
+=== `verbose`
 
 ```javascript
 verbose (bool)
@@ -78,7 +78,7 @@ verbose (bool)
 
 These are related to the relayer selection algorithm: most likely you will not need to use them.
 
-=== preferredRelayer
+=== `preferredRelayer`
 
 ```javascript
 preferredRelayer (object)
@@ -96,7 +96,7 @@ preferredRelayer = {
 };
 ```
 
-=== gasPriceFactorPercent
+=== `gasPriceFactorPercent`
 
 ```javascript
 `gasPriceFactorPercent (integer)
@@ -104,7 +104,7 @@ preferredRelayer = {
 
 Percentage increase over the network gas price for gsn transactions (defaults to 20, note that you need to clear web3 default fixed gasprice for this setting to
 go into effect).
-=== httpTimeout
+=== `httpTimeout`
 
 ```javascript
 httpTimeout (integer)
@@ -112,7 +112,7 @@ httpTimeout (integer)
 
 Timeout in ms for HTTP requests to relayers (defaults to 10000).
 
-=== allowedRelayNonceGap
+=== `allowedRelayNonceGap`
 
 ```javascript
 allowedRelayNonceGap (integer)
@@ -120,7 +120,7 @@ allowedRelayNonceGap (integer)
 
 (defaults to 3)
 
-=== relayTimeoutGrace
+=== `relayTimeoutGrace`
 
 ```javascript
 relayTimeoutGrace (integer)
@@ -128,7 +128,7 @@ relayTimeoutGrace (integer)
 
 Whenever a relayer timeouts a request, it is downscored by the client, and this penalization is reset every `relayTimeoutGrace` seconds (defaults to 1800, 30 mins)
 
-=== calculateRelayScore
+=== `calculateRelayScore`
 
 ```javascript
 `calculateRelayScore (function)
@@ -137,7 +137,7 @@ Whenever a relayer timeouts a request, it is downscored by the client, and this 
 Given a relayer, must return a numeric score (the higher the better) to rank it (defaults to using the transaction fee and penalizations due to timeouts, maxes at
 1000)
 
-=== relayFilter
+=== `relayFilter`
 
 ```javascript
 relayFilter (function)
@@ -146,7 +146,7 @@ relayFilter (function)
 Given a relayer, must return a boolean indicating whether it is elligible (defaults to using `minDelay` and `minStake`)
 
 [[tx-fee]]
-=== txfee
+=== `txfee`
 
 ```javascript
 txfee (integer)
@@ -154,7 +154,7 @@ txfee (integer)
 
 Forcefully use this transaction fee instead of the one advertised by the relayer (may lead to overpayment or rejections, defaults to empty)
 
-=== addScoreRandomness
+=== `addScoreRandomness`
 
 ```javascript
 addScoreRandomness (function)
@@ -176,7 +176,7 @@ await myTruffleContract.myFunction(paramA, { useGSN: false, value: 0 });
 ```
 ====
 
-=== useGSN
+=== `useGSN`
 
 ```javascript
 useGSN (bool)
@@ -184,7 +184,7 @@ useGSN (bool)
 
 Same as the <<use-gsn, `useGSN`>> construction option.
 
-=== txFee
+=== `txFee`
 
 ```javascript
 txFee (integer)
@@ -192,7 +192,7 @@ txFee (integer)
 
 Same as the <<tx-fee, `txFee`>> construction option.
 
-=== approveFunction
+=== `approveFunction`
 
 ```javascript
 approveFunction (function)
