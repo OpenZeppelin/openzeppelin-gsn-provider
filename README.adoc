@@ -1,7 +1,7 @@
 = OpenZeppelin GSN Provider
 
-[![npm (scoped)](https://img.shields.io/npm/v/@openzeppelin/gsn-provider)](https://www.npmjs.com/package/@openzeppelin/gsn-provider)
-[![CircleCI](https://circleci.com/gh/OpenZeppelin/openzeppelin-gsn-provider.svg?style=shield)](https://circleci.com/gh/OpenZeppelin/openzeppelin-gsn-provider)
+image:https://img.shields.io/npm/v/@openzeppelin/gsn-provider[NPM,https://www.npmjs.com/package/@openzeppelin/gsn-provider]
+image:https://circleci.com/gh/OpenZeppelin/openzeppelin-gsn-provider.svg?style=shield[CircleCI,https://circleci.com/gh/OpenZeppelin/openzeppelin-gsn-provider]
 
 = GSN Provider
 
@@ -40,9 +40,9 @@ await myContract.methods.myFunction().send({ from, useGSN: false });
 
 == Learn More
 
-* Check out docs/modules/ROOT/pages/getting-started.adoc[Getting Started] to use GSN Provider in a new project.
-* The docs/modules/ROOT/pages/testing-gsn-applications.adoc[Testing GSN Applications] will teach you how to test your project locally.
-* For detailed usage information, take a look at the docs/modules/ROOT/pages/api.adoc[API Reference].
+* Check out link:docs/modules/ROOT/pages/getting-started.adoc[Getting Started] to use GSN Provider in a new project.
+* The link:docs/modules/ROOT/pages/testing-gsn-applications.adoc[Testing GSN Applications] will teach you how to test your project locally.
+* For detailed usage information, take a look at the link:docs/modules/ROOT/pages/api.adoc[API Reference].
 
 
 == License
