@@ -24,10 +24,7 @@
     }
   },
   "files": [
-    "README.adoc",
-    "LICENSE",
-    "src",
-    "package.json"
+    "src"
   ],
   "repository": {
     "type": "git",
