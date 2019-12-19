@@ -4,10 +4,12 @@
   "description": "Web3 provider for GSN",
   "main": "src/index.js",
   "scripts": {
-    "test": "./scripts/test.sh",
     "compile-mocks": "cd test && oz compile",
+    "docs": "oz-docs",
+    "docs:watch": "npm run docs watch",
     "pre-commit": "lint-staged",
-    "pre-push": "npm run test"
+    "pre-push": "npm run test",
+    "test": "./scripts/test.sh"
   },
   "lint-staged": {
     "*.js": [
@@ -22,10 +24,7 @@
     }
   },
   "files": [
-    "README.md",
-    "LICENSE",
-    "src",
-    "package.json"
+    "src"
   ],
   "repository": {
     "type": "git",
@@ -59,6 +58,7 @@
     "lint-staged": "^9.2.5",
     "lodash": "^4.17.15",
     "mocha": "^6.2.0",
+    "openzeppelin-docs-utils": "github:OpenZeppelin/docs-utils",
     "prettier": "^1.18.2",
     "sinon": "^7.4.1"
   }

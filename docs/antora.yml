@@ -1,0 +1,5 @@
+name: provider
+title: Provider
+version: 0.0
+nav:
+  - modules/ROOT/nav.adoc
