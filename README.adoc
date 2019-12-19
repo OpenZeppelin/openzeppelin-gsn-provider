@@ -1,7 +1,7 @@
 = OpenZeppelin GSN Provider
 
-image:https://img.shields.io/npm/v/@openzeppelin/gsn-provider[NPM,https://www.npmjs.com/package/@openzeppelin/gsn-provider]
-image:https://circleci.com/gh/OpenZeppelin/openzeppelin-gsn-provider.svg?style=shield[CircleCI,https://circleci.com/gh/OpenZeppelin/openzeppelin-gsn-provider]
+https://www.npmjs.com/package/@openzeppelin/gsn-provider[image:https://img.shields.io/npm/v/@openzeppelin/gsn-provider[NPM]]
+https://circleci.com/gh/OpenZeppelin/openzeppelin-gsn-provider[image:https://circleci.com/gh/OpenZeppelin/openzeppelin-gsn-provider.svg?style=shield[CircleCI]]
 
 = GSN Provider
 
