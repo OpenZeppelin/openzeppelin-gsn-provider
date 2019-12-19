@@ -1,5 +1,5 @@
-name: provider
-title: Provider
+name: gsn-provider
+title: GSN Provider
 version: 0.0
 nav:
   - modules/ROOT/nav.adoc
