@@ -6,7 +6,7 @@
 
 === Installation
 
-```bash
+```console
 $ npm install @openzeppelin/gsn-provider
 ```
 
