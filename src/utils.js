@@ -59,7 +59,7 @@ function fixTransactionReceiptResponse(resp, debug = false) {
   };
 
   if (canRelayFailed) {
-    setErrorStatus(`canRelay failed with ${canRelayFailed.find(e => e.name == 'reason').value}`);
+    setErrorStatus(`canRelay failed with ${canRelayFailed.events.find(e => e.name == 'reason').value}`);
   } else if (transactionRelayed) {
     const status = transactionRelayed.events.find(e => e.name == 'status').value;
     if (parseInt(status) !== 0) {
