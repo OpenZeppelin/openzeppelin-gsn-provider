@@ -72,7 +72,7 @@ describe('utils', function() {
                 '0x9e80c074000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002',
               logIndex: '0x14',
               removed: false,
-              topics: [
+              topics: [ // These include a CanRelayFailed event
                 '0xafb5afd6d1c2e8ffbfb480e674a169f493ece0b22658d4f4484e7334f0241e22',
                 '0x000000000000000000000000eb3e8ad0c83d5e5c8af7ad073d5dd5b1507d73f8',
                 '0x00000000000000000000000002d9123692a15bd08bf151154c6f2a47cd1b4040',
