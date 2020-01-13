@@ -22,7 +22,7 @@ const web3 = new Web3(new GSNProvider("http://localhost:8545"));
 [[create-in-react-application]]
 === In React Applications
 
-The best way to do this is using https://github.com/OpenZeppelin/openzeppelin-network.js[OpenZeppelin Network JS], a package designed for easily setting up your connection to the Ethereum network.
+The best way to do this is using xref:network-js::index.adoc[*OpenZeppelin Network JS*], a package designed for easily setting up your connection to the Ethereum network.
 
 With React Hooks:
 
@@ -140,7 +140,7 @@ const approveFunction = async ({
 const gsnProvider = new GSNProvider("http://localhost:8545", { approveFunction });
 ```
 
-Given that the pattern above is quite common, and is implemented in `@openzeppelin/contracts` by the `GSNBouncerSignature` contract, there is a helper function that takes care of bundling the meta-transaction parameters together and hashing them, so you only need to provide a signing function for an arbitrary blob.
+Given that the pattern above is quite common, and is implemented in xref:contracts::index.adoc[*OpenZeppelin Contracts*] by the `GSNBouncerSignature` contract, there is a helper function that takes care of bundling the meta-transaction parameters together and hashing them, so you only need to provide a signing function for an arbitrary blob.
 
 ```javascript
 const { utils, GSNProvider } = require("@openzeppelin/gsn-provider");

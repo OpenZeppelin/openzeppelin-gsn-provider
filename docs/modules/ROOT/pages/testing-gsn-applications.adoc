@@ -8,7 +8,7 @@ This guide will teach you how to have a slimmed-down version of the GSN on your 
 
 The on-chain part of the GSN cannot be stubbed or faked: the contracts will only recognize the canonical addresses.
 
-Doing this locally however is not a complex process: head to the https://github.com/OpenZeppelin/openzeppelin-gsn-helpers[OpenZeppelin GSN Helpers] to learn how to deploy a `RelayHub` instance, the core contract of the GSN, both from the terminal and programatically.
+Doing this locally however is not a complex process: head to the xref:gsn-helpers::index.adoc[*OpenZeppelin GSN Helpers*] to learn how to deploy a `RelayHub` instance, the core contract of the GSN, both from the terminal and programatically.
 
 == Using the Development Provider
 
