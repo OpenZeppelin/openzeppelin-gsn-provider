@@ -1,5 +1,6 @@
 = API Reference
 
+[[basic-options]]
 == Basic Options
 
 Multiple settings of the `GSNProvider` can be set at creation:
@@ -36,6 +37,7 @@ approveFunction (function)
 
 Optional function for generating application approval data for a transaction, and returns a `bytes` approval data (such as a signature) that can be checked in the
 recipient; receives as a parameter a single object with the properties `from`, `to`, `encodedFunctionCall`, `txFee`, `gasPrice`, `gas`, `nonce`, `relayerAddress`, `relayHubAddress`.
+
 === `fixedGasPrice`
 
 ```javascript
@@ -104,6 +106,7 @@ preferredRelayer = {
 
 Percentage increase over the network gas price for gsn transactions (defaults to 20, note that you need to clear web3 default fixed gasprice for this setting to
 go into effect).
+
 === `httpTimeout`
 
 ```javascript

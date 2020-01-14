@@ -37,4 +37,5 @@ await myContract.methods.myFunction().send({ from, useGSN: false });
 
 * Check out xref:getting-started.adoc[Getting Started] to use GSN Provider in a new project.
 * The xref:testing-gsn-applications.adoc[Testing GSN Applications] will teach you how to test your project locally.
+* Head to xref:interacting-with-relayhub.adoc[Interacting With `RelayHub`] and the xref:gsn-faq.adoc[GSN Frequently Asked Questions] for more information about its inner workings.
 * For detailed usage information, take a look at the xref:api.adoc[API Reference].
