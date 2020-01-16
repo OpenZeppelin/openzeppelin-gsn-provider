@@ -40,9 +40,9 @@ await myContract.methods.myFunction().send({ from, useGSN: false });
 
 ## Learn More
 
-* Check out [Getting Started](https://docs.openzeppelin.com/getting-started) to use GSN Provider in a new project.
-* The [Testing GSN Applications](https://docs.openzeppelin.com/testing-gsn-applications) will teach you how to test your project locally.
-* For detailed usage information, take a look at the [API Reference](https://docs.openzeppelin.com/api).
+* Check out [Getting Started](https://docs.openzeppelin.com/gsn-provider/getting-started) to use GSN Provider in a new project.
+* The [Testing GSN Applications](https://docs.openzeppelin.com/gsn-provider/testing-gsn-applications) will teach you how to test your project locally.
+* For detailed usage information, take a look at the [API Reference](https://docs.openzeppelin.com/gsn-provider/api).
 
 
 ## License
