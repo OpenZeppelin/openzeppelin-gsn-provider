@@ -386,7 +386,8 @@ class RelayClient {
       if (!gasLimit)
         gasLimit = await this.estimateGas(
           {
-            ...options,
+            to: options.to,
+            from: options.from,
             gasPrice,
             data: encodedFunctionCall,
           },
