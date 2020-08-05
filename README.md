@@ -1,4 +1,4 @@
-:warning: This project is in **maintenance mode**. All development on the GSN has been moved to the [OpenGSN](https://github.com/opengsn) organization. Please refer to the [OpenGSN provider implementation](https://github.com/opengsn/gsn/tree/master/src/relayclient) (GSNv1 version [here](https://github.com/opengsn/gsn/tree/GSNv1/src/js/relayclient)). We will only be releasing fixes for high severity issues for this project until July 2020. Read [here](https://forum.openzeppelin.com/t/doubling-down-in-security/2712) for more info.
+:warning: This project is **deprecated**. All development on the GSN has been moved to the [OpenGSN](https://github.com/opengsn) organization. Please refer to the [OpenGSN provider implementation](https://github.com/opengsn/gsn/tree/master/src/relayclient) (GSNv1 version [here](https://github.com/opengsn/gsn/tree/GSNv1/src/js/relayclient)). We won't be developing new features nor addressing issues. Read [here](https://forum.openzeppelin.com/t/doubling-down-in-security/2712) for more info.
 
 # OpenZeppelin GSN Provider
 
